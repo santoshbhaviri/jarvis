@@ -1,0 +1,66 @@
+/* src/styles/global.css */
+/* Design tokens & resets — edit variables here to retheme the whole app */
+
+:root {
+  --brand:        #4f46e5;
+  --brand-light:  #eef2ff;
+  --brand-dark:   #3730a3;
+  --accent:       #06b6d4;
+
+  --bg:           #f0f2f8;
+  --surface:      #ffffff;
+  --surface-2:    #f8fafc;
+  --border:       #e2e8f0;
+  --border-focus: #a5b4fc;
+
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
+
+  --danger:  #ef4444;
+  --warn:    #f59e0b;
+  --success: #22c55e;
+
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow:    0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  --header-h: 64px;
+  --nav-h:    60px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* Utility classes */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); border: 0;
+}

@@ -1,0 +1,16 @@
+.wrap { margin-bottom: 14px; display: flex; flex-direction: column; gap: 7px; }
+
+.alert {
+  border-radius: var(--radius);
+  padding: 10px 13px;
+  font-size: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  line-height: 1.5;
+}
+
+.icon { flex-shrink: 0; margin-top: 1px; }
+
+.danger { background: #fee2e2; color: #b91c1c; }
+.warn   { background: #fef3c7; color: '#7c2d12'; color: #92400e; }
