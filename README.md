@@ -1,144 +1,62 @@
-# ⚡ TaskFlow
+# ⚡ JARVIS — Task Manager
 
-A mobile-first productivity task tracker built with **React + Vite**, backed by **Supabase**, and deployed on **Netlify**.
+A dark-themed, mobile-first productivity app with 4 tabs: Routine, Scut-Work, Mission, Task Master.
 
----
+## Features
+- **Routine** tab: 7-day week tracker per task
+- **Scut-Work** tab: Pending / Completed / Scheduled sections
+- **Mission** tab: Sorted by deadline, with extend option
+- **Task Master** tab: Add & delete all tasks centrally
+- Work / Personal / All radio filter on each tab
+- Extend tasks to a new date (scut-work & mission)
+- Edit notes inline per task
+- Completed tasks section per tab, cleared daily
+- Persistent storage via Supabase
 
-## 🗂 Project Structure
+## Setup
 
-```
-taskflow/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/          # UI components (each has .jsx + .module.css)
-│   │   ├── AlertBanner.*
-│   │   ├── BulkAddModal.*   # Bulk add: table on desktop, cards on mobile
-│   │   ├── EditTaskModal.*
-│   │   ├── FilterBar.*
-│   │   ├── Header.*
-│   │   ├── StatsBar.*
-│   │   ├── TabBar.*
-│   │   ├── TaskCard.*
-│   │   └── TaskList.*
-│   ├── hooks/
-│   │   ├── useFilters.js    # Filter + tab state logic
-│   │   └── useTasks.js      # All Supabase CRUD operations
-│   ├── lib/
-│   │   ├── constants.js     # Priorities, categories, statuses — edit here
-│   │   ├── dateUtils.js     # Date helpers
-│   │   └── supabase.js      # Supabase client
-│   ├── pages/
-│   │   └── Dashboard.*      # Main page — composes all components
-│   ├── styles/
-│   │   └── global.css       # CSS variables / design tokens
-│   ├── App.jsx
-│   └── main.jsx
-├── .env.example
-├── .gitignore
-├── index.html
-├── netlify.toml
-├── package.json
-├── supabase-schema.sql      # Run this in Supabase SQL editor
-└── vite.config.js
-```
-
----
-
-## 🚀 Setup Guide
-
-### 1. Clone & Install
-
+### 1. Install
 ```bash
-git clone https://github.com/YOUR_USERNAME/taskflow.git
-cd taskflow
 npm install
 ```
 
----
+### 2. Supabase
+- Create project at supabase.com
+- Run `supabase-schema.sql` in SQL Editor
+- Copy Project URL and anon key
 
-### 2. Set Up Supabase
-
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. In your project, open **SQL Editor** and run the contents of `supabase-schema.sql`
-3. Go to **Settings → API** and copy:
-   - **Project URL**  (looks like `https://xxxx.supabase.co`)
-   - **anon/public key**
-
----
-
-### 3. Configure Environment Variables
-
+### 3. Environment
 ```bash
 cp .env.example .env
+# Fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 ```
 
-Edit `.env`:
-
-```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
-```
-
----
-
-### 4. Run Locally
-
+### 4. Run locally
 ```bash
-npm run dev
+./node_modules/.bin/vite        # Git Bash
+npm run dev                      # cmd / PowerShell
 ```
 
-Open [http://localhost:5173](http://localhost:5173)
-
----
-
-### 5. Deploy to Netlify
-
-#### Option A — Netlify UI (recommended)
-
-1. Push your repo to GitHub
-2. Go to [netlify.com](https://netlify.com) → **Add new site → Import from Git**
-3. Select your GitHub repo
-4. Build settings are auto-detected from `netlify.toml`
-5. In **Site Settings → Environment Variables**, add:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-6. Deploy!
-
-#### Option B — Netlify CLI
-
+### 5. Build & deploy
 ```bash
-npm install -g netlify-cli
-netlify login
-netlify init
-netlify env:set VITE_SUPABASE_URL "https://xxxx.supabase.co"
-netlify env:set VITE_SUPABASE_ANON_KEY "your-key"
-netlify deploy --prod
+./node_modules/.bin/vite build  # creates dist/
+# Drag dist/ to app.netlify.com/drop
+# Add env vars in Netlify site settings
 ```
 
----
+## Structure
+```
+src/
+  components/   # One .jsx + .module.css per component
+  hooks/        # useTasks.js — all DB logic
+  lib/          # constants, dateUtils, supabase client
+  styles/       # global.css with CSS variables
+```
 
-## 🛠 Customisation
-
-| What to change | Where |
-|---|---|
-| Add a new category / priority / status | `src/lib/constants.js` |
-| Change colors / fonts | `src/styles/global.css` (CSS variables) |
-| Add a new page / route | `src/App.jsx` + new file in `src/pages/` |
-| Change DB queries | `src/hooks/useTasks.js` |
-| Add DB columns | `supabase-schema.sql` + update `useTasks.js` |
-
----
-
-## 📦 Tech Stack
-
-| Layer | Tech |
-|---|---|
-| Frontend | React 18 + Vite |
-| Routing | React Router v6 |
-| Database | Supabase (PostgreSQL) |
-| Styling | CSS Modules + CSS Variables |
-| Toasts | react-hot-toast |
-| Dates | date-fns |
-| Hosting | Netlify |
-| Fonts | Syne + DM Sans (Google Fonts) |
+## Customise
+| What | Where |
+|------|-------|
+| Tab names / icons | `src/lib/constants.js` |
+| Colors / fonts | `src/styles/global.css` |
+| DB queries | `src/hooks/useTasks.js` |
+| Add a new tab | `src/App.jsx` + new page component |

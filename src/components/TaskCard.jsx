@@ -1,87 +1,175 @@
 // src/components/TaskCard.jsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { CATEGORIES, STATUSES } from '../lib/constants'
+import { formatDisplay, dueBadge } from '../lib/dateUtils'
 import styles from './TaskCard.module.css'
-import { PRIORITIES, CATEGORIES, STATUSES } from '../lib/constants'
-import { dueBadge, formatDisplay } from '../lib/dateUtils'
 
-export default function TaskCard({ task, onStatusChange, onEdit, onDelete }) {
-  const [expanded, setExpanded] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+export default function TaskCard({
+  task,
+  completed   = false,
+  scheduled   = false,
+  onToggleComplete,
+  onEditNotes,
+  onExtend,
+  showDueDate = false,
+  showExtend  = false,
+}) {
+  const [editingNotes, setEditingNotes]       = useState(false)
+  const [notesVal, setNotesVal]               = useState(task.notes || '')
+  const [showExtendInput, setShowExtendInput] = useState(false)
+  const [extendDate, setExtendDate]           = useState('')
+  const [saving, setSaving]                   = useState(false)
 
-  const pri     = PRIORITIES[task.priority]
-  const cat     = CATEGORIES[task.category]
-  const db      = dueBadge(task.due_date)
-  const isDone  = task.status === 'done'
+  // Sync textarea when task.notes changes externally
+  useEffect(() => {
+    if (!editingNotes) setNotesVal(task.notes || '')
+  }, [task.notes, editingNotes])
 
-  const handleStatusChange = async (e) => {
-    e.stopPropagation()
-    const { error } = await onStatusChange(task.id, e.target.value)
-    if (error) toast.error('Could not update status')
+  const cat = CATEGORIES[task.category]
+  const st  = STATUSES[task.status]
+  const db  = dueBadge(task.due_date)
+
+  const handleSaveNotes = async () => {
+    setSaving(true)
+    const { error } = await onEditNotes(task.id, notesVal)
+    setSaving(false)
+    if (error) toast.error('Could not save notes')
+    else { toast.success('Notes saved!'); setEditingNotes(false) }
   }
 
-  const handleDelete = async (e) => {
-    e.stopPropagation()
-    if (!confirm(`Delete "${task.title}"?`)) return
-    setDeleting(true)
-    const { error } = await onDelete(task.id)
-    if (error) { toast.error('Could not delete task'); setDeleting(false) }
-    else toast.success('Task deleted')
+  const handleCancelNotes = () => {
+    setEditingNotes(false)
+    setNotesVal(task.notes || '')
   }
+
+  const handleExtend = async () => {
+    if (!extendDate) { toast.error('Pick a date'); return }
+    setSaving(true)
+    const { error } = await onExtend(task, extendDate)
+    setSaving(false)
+    if (error) toast.error('Could not extend task')
+    else {
+      toast.success('Task moved to Scheduled!')
+      setShowExtendInput(false)
+      setExtendDate('')
+    }
+  }
+
+  const cardClass = [
+    styles.card,
+    completed         ? styles.completed  : '',
+    scheduled         ? styles.scheduled  : '',
+    task.is_unfinished ? styles.unfinished : '',
+  ].filter(Boolean).join(' ')
 
   return (
-    <li className={`${styles.card} ${isDone ? styles.done : ''} ${deleting ? styles.deleting : ''}`}>
-      {/* Card header — always visible */}
-      <div className={styles.header} onClick={() => setExpanded(e => !e)}>
-        <span className={styles.dot} style={{ background: pri.dot }} />
-        <div className={styles.main}>
-          <p className={styles.title}>{task.title}</p>
-          <div className={styles.meta}>
-            <span className={`${styles.catBadge} ${styles[task.category]}`}>
+    <div className={cardClass}>
+      <div className={styles.top}>
+
+        {/* Checkbox */}
+        <button
+          className={`${styles.checkbox} ${completed ? styles.checked : ''}`}
+          onClick={() => onToggleComplete(task.id)}
+          title={completed ? 'Mark incomplete' : 'Mark complete'}
+        >
+          {completed && <span className={styles.checkMark}>✓</span>}
+        </button>
+
+        <div className={styles.content}>
+          <div className={styles.titleRow}>
+            <span className={styles.title}>{task.title}</span>
+            {/* Unfinished tag — highest priority, shown first */}
+            {task.is_unfinished && <span className={styles.unfinishedTag}>Unfinished</span>}
+            {task.is_extended   && !task.is_unfinished && <span className={styles.extTag}>Extended</span>}
+            {scheduled          && <span className={styles.scheduledTag}>Scheduled</span>}
+          </div>
+
+          <div className={styles.badges}>
+            <span className={styles.catBadge} style={{ background: cat.bg, color: cat.color }}>
               {cat.icon} {cat.label}
             </span>
-            {db && (
-              <span className={styles.dueBadge} style={{ background: db.bg, color: db.color }}>
+            <span className={styles.stBadge} style={{ background: st.bg, color: st.color }}>
+              {st.label}
+            </span>
+            {showDueDate && task.due_date && (
+              <span
+                className={styles.dueDateBadge}
+                style={{ background: db?.bg || '#1f2237', color: db?.color || '#a0a8c8' }}
+              >
+                📅 {formatDisplay(task.due_date)}
+                {db && ` · ${db.text}`}
+              </span>
+            )}
+            {!showDueDate && db && (
+              <span className={styles.dueDateBadge} style={{ background: db.bg, color: db.color }}>
                 {db.text}
               </span>
             )}
-            {task.followup_date && (
-              <span className={styles.followupBadge}>↻ {formatDisplay(task.followup_date)}</span>
-            )}
           </div>
+
+          {task.notes && !editingNotes && (
+            <p className={styles.notes}>📝 {task.notes}</p>
+          )}
         </div>
-        <select
-          className={styles.statusSel}
-          value={task.status}
-          onChange={handleStatusChange}
-          onClick={e => e.stopPropagation()}
-        >
-          {Object.entries(STATUSES).map(([k, v]) => (
-            <option key={k} value={k}>{v.icon} {v.label}</option>
-          ))}
-        </select>
-        <span className={`${styles.chevron} ${expanded ? styles.open : ''}`}>›</span>
+
+        {/* Action buttons */}
+        <div className={styles.actions}>
+          <button
+            className={`${styles.iconBtn} ${editingNotes ? styles.iconBtnActive : ''}`}
+            title="Edit notes"
+            onClick={() => setEditingNotes(e => !e)}
+          >✏️</button>
+          {showExtend && !completed && (
+            <button
+              className={`${styles.iconBtn} ${showExtendInput ? styles.iconBtnActive : ''}`}
+              title={scheduled ? 'Re-schedule' : 'Extend task'}
+              onClick={() => setShowExtendInput(e => !e)}
+            >📅</button>
+          )}
+        </div>
       </div>
 
-      {/* Expanded detail */}
-      {expanded && (
-        <div className={styles.detail}>
-          <div className={styles.detailRow}>
-            <span>📅 Due: <strong>{formatDisplay(task.due_date)}</strong></span>
-            <span>↻ Follow-up: <strong>{formatDisplay(task.followup_date)}</strong></span>
-            <span>🎯 Priority: <strong style={{ color: pri.color }}>{pri.label}</strong></span>
-          </div>
-          {task.notes && <p className={styles.notes}>📝 {task.notes}</p>}
-          <div className={styles.actions}>
-            <button className={styles.editBtn} onClick={(e) => { e.stopPropagation(); onEdit(task) }}>
-              ✏️ Edit
-            </button>
-            <button className={styles.delBtn} onClick={handleDelete}>
-              🗑 Delete
+      {/* Edit notes */}
+      {editingNotes && (
+        <div className={styles.editNotes}>
+          <textarea
+            className={styles.notesInput}
+            value={notesVal}
+            onChange={e => setNotesVal(e.target.value)}
+            placeholder="Add notes…"
+            rows={2}
+            autoFocus
+          />
+          <div className={styles.notesActions}>
+            <button className={styles.cancelSmall} onClick={handleCancelNotes}>Cancel</button>
+            <button className={styles.saveSmall} onClick={handleSaveNotes} disabled={saving}>
+              {saving ? '…' : 'Save'}
             </button>
           </div>
         </div>
       )}
-    </li>
+
+      {/* Extend / reschedule */}
+      {showExtendInput && (
+        <div className={styles.extendRow}>
+          <span className={styles.extLabel}>
+            {scheduled ? 'Reschedule to:' : 'Extend to:'}
+          </span>
+          <input
+            type="date"
+            className={styles.extInput}
+            value={extendDate}
+            onChange={e => setExtendDate(e.target.value)}
+          />
+          <button className={styles.saveSmall} onClick={handleExtend} disabled={saving}>
+            {saving ? '…' : 'Confirm'}
+          </button>
+          <button className={styles.cancelSmall} onClick={() => { setShowExtendInput(false); setExtendDate('') }}>
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
   )
 }

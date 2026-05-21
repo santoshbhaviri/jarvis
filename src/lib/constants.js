@@ -1,25 +1,23 @@
-// src/lib/constants.js
-// Edit labels, colors, and options here — changes propagate everywhere
-
-export const PRIORITIES = {
-  high:   { label: 'High',   color: '#ef4444', bg: '#fef2f2', dot: '#ef4444' },
-  medium: { label: 'Medium', color: '#f59e0b', bg: '#fffbeb', dot: '#f59e0b' },
-  low:    { label: 'Low',    color: '#22c55e', bg: '#f0fdf4', dot: '#22c55e' },
-}
+export const TABS = [
+  { key: 'routine',    label: 'Routine',     icon: '🔁' },
+  { key: 'scut-work',  label: 'Scut-Work',   icon: '⚙️' },
+  { key: 'mission',    label: 'Mission',      icon: '🎯' },
+  { key: 'taskmaster', label: 'Task Master',  icon: '👑' },
+]
 
 export const CATEGORIES = {
-  work:     { label: 'Work',     icon: '💼', color: '#4f46e5' },
-  personal: { label: 'Personal', icon: '🏠', color: '#ec4899' },
+  work:     { label: 'Work',     icon: '💼', color: '#6366f1', bg: '#eef2ff' },
+  personal: { label: 'Personal', icon: '🏠', color: '#ec4899', bg: '#fdf2f8' },
 }
 
 export const STATUSES = {
-  todo:       { label: 'To Do',       icon: '○', color: '#94a3b8' },
-  inprogress: { label: 'In Progress', icon: '◑', color: '#3b82f6' },
-  followup:   { label: 'Follow Up',   icon: '↻', color: '#f59e0b' },
-  done:       { label: 'Done',        icon: '✓', color: '#22c55e' },
+  routine:    { label: 'Routine',   color: '#06b6d4', bg: '#ecfeff' },
+  'scut-work':{ label: 'Scut-Work', color: '#f59e0b', bg: '#fffbeb' },
+  mission:    { label: 'Mission',   color: '#8b5cf6', bg: '#f5f3ff' },
 }
 
-export const EMPTY_TASK = {
-  title: '', category: 'work', priority: 'medium',
-  status: 'todo', due_date: '', followup_date: '', notes: '',
+export const DAYS = ['S','M','T','W','T','F','S']
+
+export const EMPTY_FORM = {
+  title: '', category: 'work', status: 'routine', due_date: '', notes: ''
 }
