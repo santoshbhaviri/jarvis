@@ -1,94 +1,80 @@
 // src/hooks/useTasks.js
+// All database logic.
+//   Tasks   (status 'scut-work' or 'mission'): one-off to-dos with a day (due_date).
+//           Unfinished tasks from earlier days move to today automatically.
+//           Finished tasks keep completed_at and sit in the Done bin for 30 days.
+//   Habits  (status 'routine'): ticked per day in routine_completions.
 import { useState, useEffect, useCallback } from 'react'
+import { format, subDays } from 'date-fns'
 import { supabase } from '../lib/supabase'
-import { format, addDays } from 'date-fns'
 import { todayStr } from '../lib/dateUtils'
+
+export const BIN_DAYS = 30
 
 // Fields the app writes on create; everything else uses database defaults
 const toRow = (p) => ({
-  title:         p.title.trim(),
-  category:      p.category,
-  status:        p.status,
-  due_date:      p.due_date      || null,
-  notes:         p.notes         || null,
-  important:     !!p.important,
-  urgent:        !!p.urgent,
-  waiting_on:    p.waiting_on?.trim() || null,
-  follow_up:     p.waiting_on?.trim() ? (p.follow_up || null) : null,
-  is_extended:   p.is_extended   || false,
-  is_unfinished: false,
-  extended_from: p.extended_from || null,
-  postponed:     p.postponed     || 0,
+  title:           p.title.trim(),
+  category:        p.category || 'work',
+  status:          p.status   || 'scut-work',
+  due_date:        p.status === 'routine' ? null : (p.due_date || todayStr()),
+  notes:           p.notes    || null,
+  important:       !!p.important,
+  target_per_week: p.target_per_week || null,
 })
 
 export function useTasks() {
   const [tasks, setTasks]           = useState([])
   const [routineCompletions, setRC] = useState([])
-  const [dailyCompletions, setDC]   = useState([])
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(null)
 
   const fetchAll = useCallback(async () => {
     setLoading(true); setError(null)
     const today = todayStr()
-    const [t, rc, dc] = await Promise.all([
-      supabase.from('tasks').select('*').order('created_at', { ascending: false }),
-      supabase.from('routine_completions').select('*'),
-      supabase.from('daily_completions').select('*').eq('date', today),
-    ])
-    if (t.error) { console.error('fetchAll tasks error:', t.error); setError(t.error.message) }
-    else {
-      const fetchedTasks = t.data ?? []
-      const todayDC = dc.data ?? []
-      const completedIds = new Set(todayDC.map(d => d.task_id))
 
-      // Auto-extend overdue unfinished scut-work tasks to today
-      // (finished tasks keep their completed_at and stay in history)
-      const overduePending = fetchedTasks.filter(task =>
-        task.status === 'scut-work' &&
-        !task.completed_at &&
-        task.due_date &&
-        task.due_date < today &&
-        !completedIds.has(task.id)
-      )
-      if (overduePending.length > 0) {
-        const { data: updated, error: updateErr } = await supabase
-          .from('tasks')
-          .update({ due_date: today, is_unfinished: true })
-          .in('id', overduePending.map(t => t.id))
-          .select()
-        if (!updateErr && updated) {
-          const map = new Map(updated.map(t => [t.id, t]))
-          setTasks(fetchedTasks.map(t => map.get(t.id) ?? t))
-        } else {
-          setTasks(fetchedTasks)
-        }
-      } else {
-        setTasks(fetchedTasks)
-      }
+    // Empty the Done bin of anything finished more than 30 days ago
+    const cutoff = subDays(new Date(), BIN_DAYS).toISOString()
+    const purge = await supabase.from('tasks').delete().neq('status', 'routine').lt('completed_at', cutoff)
+    if (purge.error) console.error('purge error:', purge.error)
+
+    const [t, rc] = await Promise.all([
+      supabase.from('tasks').select('*').order('created_at', { ascending: true }),
+      supabase.from('routine_completions').select('*'),
+    ])
+    if (t.error) { console.error('fetchAll tasks error:', t.error); setError(t.error.message); setLoading(false); return }
+
+    // Carry unfinished tasks from earlier days over to today
+    let fetched = t.data ?? []
+    const carry = fetched.filter(x => x.status !== 'routine' && !x.completed_at && (!x.due_date || x.due_date < today))
+    if (carry.length) {
+      const moved = await Promise.all(carry.map(x =>
+        supabase.from('tasks')
+          .update({ due_date: today, is_unfinished: true, postponed: (x.postponed || 0) + 1 })
+          .eq('id', x.id).select().single()
+      ))
+      const map = new Map(moved.filter(r => r.data).map(r => [r.data.id, r.data]))
+      fetched = fetched.map(x => map.get(x.id) ?? x)
     }
+
+    setTasks(fetched)
     setRC(rc.data ?? [])
-    setDC(dc.data ?? [])
     setLoading(false)
   }, [])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // ── Add single task ──────────────────────────────────────────
-  const addTask = useCallback(async (form) => {
-    const payload = toRow(form)
-    const { data, error } = await supabase.from('tasks').insert(payload).select().single()
-    if (error) console.error('addTask error:', error)
-    if (!error && data) setTasks(prev => [data, ...prev])
-    return { data, error }
-  }, [])
+  // Pick up the new day if the app stays open past midnight
+  useEffect(() => {
+    let day = todayStr()
+    const id = setInterval(() => { if (todayStr() !== day) { day = todayStr(); fetchAll() } }, 60_000)
+    return () => clearInterval(id)
+  }, [fetchAll])
 
-  // ── Add multiple tasks (bulk) ────────────────────────────────
-  const addTasks = useCallback(async (payloads) => {
-    const rows = payloads.map(p => toRow({ ...p, is_extended: false, extended_from: null }))
-    const { data, error } = await supabase.from('tasks').insert(rows).select()
-    if (error) console.error('addTasks error:', error)
-    if (!error && data) setTasks(prev => [...[...data].reverse(), ...prev])
+  // ── Add ──────────────────────────────────────────────────────
+  const addTask = useCallback(async (form) => {
+    const { data, error } = await supabase.from('tasks').insert(toRow(form)).select().single()
+    if (error) console.error('addTask error:', error)
+    if (!error && data) setTasks(prev => [...prev, data])
     return { data, error }
   }, [])
 
@@ -101,153 +87,56 @@ export function useTasks() {
     return { data, error }
   }, [])
 
-  // ── Update notes only ────────────────────────────────────────
-  const updateNotes = useCallback((id, notes) => updateTask(id, { notes }), [updateTask])
-
-  // ── Top 3 focus for today (star) ─────────────────────────────
-  const toggleFocus = useCallback((task) => {
-    const today = todayStr()
-    return updateTask(task.id, { focus_date: task.focus_date === today ? null : today })
-  }, [updateTask])
-
-  // ── Follow-up made: remind again in 2 days ───────────────────
-  const markChased = useCallback((task) => {
-    const next = format(addDays(new Date(), 2), 'yyyy-MM-dd')
-    return updateTask(task.id, { follow_up: next })
-  }, [updateTask])
-
-  // ── Delete task ──────────────────────────────────────────────
+  // ── Delete for good ──────────────────────────────────────────
   const deleteTask = useCallback(async (id) => {
     const { error } = await supabase.from('tasks').delete().eq('id', id)
     if (error) console.error('deleteTask error:', error)
-    if (!error) setTasks(prev => prev.filter(t => t.id !== id))
+    if (!error) {
+      setTasks(prev => prev.filter(t => t.id !== id))
+      setRC(prev => prev.filter(r => r.task_id !== id))
+    }
     return { error }
   }, [])
 
-  // ── Extend task ──────────────────────────────────────────────
-  // deletePrevious = false  →  Scut-Work: updates original task's due_date in place
-  // deletePrevious = true   →  Mission: deletes original, inserts a fresh extended task
-  const extendTask = useCallback(async (task, newDate, deletePrevious = false) => {
-    if (deletePrevious) {
-      // Mission flow: create a new task with the new date, then delete the original
-      const payload = toRow({
-        ...task,                             // keep the same title (no "(Extended)" suffix)
-        due_date:      newDate,
-        is_extended:   true,
-        extended_from: task.id,
-        postponed:     (task.postponed || 0) + 1,
-      })
-      const { data: newTask, error: insertErr } = await supabase
-        .from('tasks').insert(payload).select().single()
-      if (insertErr) {
-        console.error('extendTask insert error:', insertErr)
-        return { error: insertErr }
-      }
+  // ── Finish / un-finish a task ────────────────────────────────
+  const setDone = useCallback((task, done) =>
+    updateTask(task.id, { completed_at: done ? new Date().toISOString() : null }), [updateTask])
 
-      // Delete the original
-      const { error: deleteErr } = await supabase
-        .from('tasks').delete().eq('id', task.id)
-      if (deleteErr) {
-        console.error('extendTask delete original error:', deleteErr)
-        // New task was created but original not deleted — still return success
-        // so UI reflects the new task; user can manually delete old one
-      }
+  // ── Bring a task back from the Done bin to today ─────────────
+  const restoreTask = useCallback((task) =>
+    updateTask(task.id, { completed_at: null, due_date: todayStr() }), [updateTask])
 
-      // Update local state: remove original, add new
-      setTasks(prev => [newTask, ...prev.filter(t => t.id !== task.id)])
-      return { data: newTask, error: null }
+  // ── Move a task to another day ───────────────────────────────
+  const moveTask = useCallback((task, date) =>
+    updateTask(task.id, { due_date: date }), [updateTask])
 
-    } else {
-      // Scut-Work flow: just update the due_date on the original task
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({ due_date: newDate, is_extended: true, postponed: (task.postponed || 0) + 1 })
-        .eq('id', task.id)
-        .select()
-        .single()
-      if (error) console.error('extendTask update error:', error)
-      if (!error && data) setTasks(prev => prev.map(t => t.id === task.id ? data : t))
-      return { data, error }
-    }
-  }, [])
-
-  // ── Toggle routine day (used only by useTasks internally now) ─
+  // ── Habit ticks ──────────────────────────────────────────────
   const toggleRoutineDay = useCallback(async (taskId, date) => {
     const exists = routineCompletions.find(r => r.task_id === taskId && r.date === date)
     if (exists) {
       const { error } = await supabase.from('routine_completions').delete()
         .eq('task_id', taskId).eq('date', date)
-      if (error) { console.error('toggleRoutineDay delete error:', error); return }
+      if (error) { console.error('toggleRoutineDay delete error:', error); return { error } }
       setRC(prev => prev.filter(r => !(r.task_id === taskId && r.date === date)))
     } else {
       const { data, error } = await supabase.from('routine_completions')
         .insert({ task_id: taskId, date }).select().single()
-      if (error) { console.error('toggleRoutineDay insert error:', error); return }
+      if (error) { console.error('toggleRoutineDay insert error:', error); return { error } }
       if (data) setRC(prev => [...prev, data])
     }
+    return { error: null }
   }, [routineCompletions])
 
-  // ── Toggle daily task completion (checkbox) ──────────────────
-  // Also writes to routine_completions for today so the calendar reflects it
-  // Scut-work and mission tasks also get completed_at, so they leave the
-  // pending lists for good and show up in Insights history
-  const toggleDailyComplete = useCallback(async (taskId) => {
-    const today = todayStr()
-    const exists = dailyCompletions.find(d => d.task_id === taskId && d.date === today)
-    const task   = tasks.find(t => t.id === taskId)
-    if (task && task.status !== 'routine') {
-      await updateTask(taskId, { completed_at: exists ? null : new Date().toISOString() })
-    }
-
-    if (exists) {
-      const { error } = await supabase.from('daily_completions').delete()
-        .eq('task_id', taskId).eq('date', today)
-      if (error) { console.error('toggleDailyComplete delete error:', error); return }
-      setDC(prev => prev.filter(d => !(d.task_id === taskId && d.date === today)))
-
-      // Also un-mark routine completion for today if this is a routine task
-      const rcExists = routineCompletions.find(r => r.task_id === taskId && r.date === today)
-      if (rcExists) {
-        await supabase.from('routine_completions').delete()
-          .eq('task_id', taskId).eq('date', today)
-        setRC(prev => prev.filter(r => !(r.task_id === taskId && r.date === today)))
-      }
-    } else {
-      const { data, error } = await supabase.from('daily_completions')
-        .insert({ task_id: taskId, date: today }).select().single()
-      if (error) { console.error('toggleDailyComplete insert error:', error); return }
-      if (data) setDC(prev => [...prev, data])
-
-      // Also mark routine_completions for today so the calendar fills in automatically
-      const rcExists = routineCompletions.find(r => r.task_id === taskId && r.date === today)
-      if (!rcExists) {
-        const { data: rcData, error: rcErr } = await supabase.from('routine_completions')
-          .insert({ task_id: taskId, date: today }).select().single()
-        if (!rcErr && rcData) setRC(prev => [...prev, rcData])
-      }
-    }
-  }, [dailyCompletions, routineCompletions, tasks, updateTask])
-
-  const isCompletedToday = useCallback((taskId) => {
-    const today = todayStr()
-    return dailyCompletions.some(d => d.task_id === taskId && d.date === today)
-  }, [dailyCompletions])
-
-  const isRoutineDone = useCallback((taskId, date) => {
-    return routineCompletions.some(r => r.task_id === taskId && r.date === date)
-  }, [routineCompletions])
-
-  // Finished on an earlier day: hidden from pending lists, kept for history
-  const isFinishedEarlier = useCallback((task) => {
-    return !!task.completed_at && !dailyCompletions.some(d => d.task_id === task.id)
-  }, [dailyCompletions])
+  const isRoutineDone = useCallback((taskId, date) =>
+    routineCompletions.some(r => r.task_id === taskId && r.date === date), [routineCompletions])
 
   return {
-    tasks, loading, error,
-    routineCompletions, dailyCompletions,
-    fetchAll,
-    addTask, addTasks, updateTask, updateNotes, deleteTask, extendTask,
-    toggleRoutineDay, toggleDailyComplete, toggleFocus, markChased,
-    isCompletedToday, isRoutineDone, isFinishedEarlier,
+    tasks, loading, error, routineCompletions,
+    fetchAll, addTask, updateTask, deleteTask,
+    setDone, restoreTask, moveTask,
+    toggleRoutineDay, isRoutineDone,
   }
 }
+
+// Local calendar day a task was finished on
+export const doneDay = (t) => format(new Date(t.completed_at), 'yyyy-MM-dd')

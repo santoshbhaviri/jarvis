@@ -1,113 +1,87 @@
 // src/components/TodayTab.jsx
-// The daily starting point: Top 3 focus, overdue, due today, follow-ups to make
-import { useMemo } from 'react'
+// The day's plan: what to do today (unfinished tasks carry over by themselves),
+// what got done, and anything already planned for later days.
+import { useState } from 'react'
+import { format, addDays } from 'date-fns'
 import { todayStr } from '../lib/dateUtils'
-import { quadrantOf } from '../lib/constants'
-import { openTasks, byPriority, followUpsDue } from '../lib/selectors'
+import { doneDay } from '../hooks/useTasks'
+import QuickCapture  from './QuickCapture'
 import SectionHeader from './SectionHeader'
-import TaskCard      from './TaskCard'
-import shared        from './TabShared.module.css'
+import TaskRow       from './TaskRow'
 import styles        from './TodayTab.module.css'
 
-export default function TodayTab({ catFilter, taskData, onOpenTab }) {
-  const { tasks, isCompletedToday, toggleDailyComplete, toggleFocus, updateNotes, extendTask } = taskData
-  const today = todayStr()
+export default function TodayTab({ taskData, onEdit }) {
+  const { tasks, addTask, setDone, updateTask } = taskData
+  const [showLater, setShowLater] = useState(true)
+  const today    = todayStr()
 
-  const mine = useMemo(() =>
-    tasks.filter(t => catFilter === 'all' || t.category === catFilter), [tasks, catFilter])
+  const mine  = tasks.filter(t => t.status !== 'routine')
+  // Highlighted first, then carried-over, then in the order they were added
+  const order = (a, b) => (b.important - a.important) || ((b.is_unfinished ? 1 : 0) - (a.is_unfinished ? 1 : 0))
+  const todo  = mine.filter(t => !t.completed_at && t.due_date <= today).sort(order)
+  const done  = mine.filter(t => t.completed_at && doneDay(t) === today)
+  const later = mine.filter(t => !t.completed_at && t.due_date > today)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))
 
-  const open      = openTasks(mine)
-  const focus     = open.filter(t => t.focus_date === today).sort(byPriority)
-  // Each task shows once: focus first, then follow-ups, then by date
-  const chase     = followUpsDue(mine, today).filter(t => t.focus_date !== today)
-  const shown     = new Set([...focus, ...chase].map(t => t.id))
-  const overdue   = open.filter(t => t.due_date && t.due_date < today && !shown.has(t.id)).sort(byPriority)
-  const dueToday  = open.filter(t => t.due_date === today && !shown.has(t.id)).sort(byPriority)
-  const doneToday = mine.filter(t => t.status !== 'routine' && isCompletedToday(t.id))
-  const routines  = mine.filter(t => t.status === 'routine')
-  const routinesLeft = routines.filter(t => !isCompletedToday(t.id)).length
-  const suggestions = open
-    .filter(t => t.focus_date !== today && quadrantOf(t) <= 2)
-    .sort(byPriority)
-    .slice(0, Math.max(0, 3 - focus.length))
-
-  const card = (t, completed = false) => (
-    <TaskCard key={t.id} task={t}
-      completed={completed}
-      onToggleComplete={toggleDailyComplete}
-      onEditNotes={updateNotes}
-      onExtend={(task, d) => extendTask(task, d, task.status === 'mission')}
-      showExtend={!completed}
-      showDueDate={true}
-    />
-  )
-
-  const stats = [
-    { n: open.filter(t => t.due_date && t.due_date < today).length, label: 'Overdue', tone: open.some(t => t.due_date && t.due_date < today) ? styles.bad : '' },
-    { n: open.filter(t => t.due_date === today).length, label: 'Due today', tone: open.some(t => t.due_date === today) ? styles.warn : '' },
-    { n: chase.length,    label: 'Follow-ups to make', tone: chase.length ? styles.warn : '' },
-    { n: doneToday.length, label: 'Finished today',  tone: styles.good },
-  ]
+  const total = todo.length + done.length
+  const pct   = total ? Math.round(done.length * 100 / total) : 0
+  const star  = (t) => updateTask(t.id, { important: !t.important })
+  const rowProps = { onToggle: setDone, onStar: star, onEdit }
 
   return (
     <div>
-      <div className={styles.stats}>
-        {stats.map(s => (
-          <div key={s.label} className={`${styles.stat} ${s.tone}`}>
-            <span className={styles.statN}>{s.n}</span>
-            <span className={styles.statL}>{s.label}</span>
+      <div className={styles.dayCard}>
+        <div className={styles.dayTop}>
+          <div>
+            <div className={styles.dayName}>{format(new Date(), 'EEEE')}</div>
+            <div className={styles.dayDate}>{format(new Date(), 'd MMMM yyyy')}</div>
           </div>
-        ))}
-      </div>
-
-      <SectionHeader label="Top 3 for today" count={focus.length} accent="#f59e0b" />
-      <div className={shared.list}>
-        {focus.map(t => card(t))}
-        {focus.length === 0 && <p className={shared.noneMsg}>Star ☆ up to three important tasks to make them today’s focus.</p>}
-        {focus.length > 3 && <p className={styles.note}>More than 3 focus tasks dilutes focus. Consider un-starring some.</p>}
-        {suggestions.length > 0 && (
-          <div className={styles.suggest}>
-            <span className={styles.suggestLabel}>Suggested:</span>
-            {suggestions.map(t => (
-              <button key={t.id} className={styles.suggestBtn} onClick={() => toggleFocus(t)}>☆ {t.title}</button>
-            ))}
+          <div className={styles.score}>
+            <span className={styles.scoreN}>{done.length}<small>/{total}</small></span>
+            <span className={styles.scoreL}>done</span>
           </div>
-        )}
+        </div>
+        <div className={styles.bar} role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <span style={{ width: `${pct}%` }} />
+        </div>
       </div>
 
-      {chase.length > 0 && (
-        <>
-          <SectionHeader label="Follow up today" count={chase.length} accent="#06b6d4" />
-          <p className={styles.note}>Tap 📞 after you call or message. It reminds you again in 2 days.</p>
-          <div className={shared.list}>{chase.map(t => card(t))}</div>
-        </>
-      )}
+      <QuickCapture onAdd={addTask} />
 
-      {overdue.length > 0 && (
-        <>
-          <SectionHeader label="Overdue" count={overdue.length} accent="#ef4444" />
-          <div className={shared.list}>{overdue.map(t => card(t))}</div>
-        </>
-      )}
-
-      <SectionHeader label="Due today" count={dueToday.length} accent="#f59e0b" />
-      <div className={shared.list}>
-        {dueToday.map(t => card(t))}
-        {dueToday.length === 0 && <p className={shared.noneMsg}>Nothing else is due today.</p>}
+      <SectionHeader label="To do today" count={todo.length} accent="#6366f1" />
+      <div className={styles.list}>
+        {todo.map(t => <TaskRow key={t.id} task={t} {...rowProps} />)}
+        {todo.length === 0 && total > 0 && <p className={styles.none}>All done for today. 🎉</p>}
+        {total === 0 && <p className={styles.none}>Nothing planned yet. Add what you want to get done today in the box above. Tap ☆ to highlight the most important ones.</p>}
       </div>
-
-      {routines.length > 0 && (
-        <button className={styles.routineLink} onClick={() => onOpenTab('routine')}>
-          🔁 {routinesLeft === 0 ? 'All routines done today' : `${routinesLeft} of ${routines.length} routines left today`} →
-        </button>
+      {todo.length > 0 && (
+        <p className={styles.note}>Anything not ticked off by midnight moves to tomorrow automatically.</p>
       )}
 
-      {doneToday.length > 0 && (
+      {done.length > 0 && (
         <>
-          <SectionHeader label="Finished today" count={doneToday.length} accent="#22c55e" />
-          <div className={shared.list}>{doneToday.map(t => card(t, true))}</div>
+          <SectionHeader label="Done today" count={done.length} accent="#22c55e" />
+          <div className={styles.list}>
+            {done.map(t => <TaskRow key={t.id} task={t} done {...rowProps} />)}
+          </div>
         </>
       )}
+
+      {later.length > 0 && (
+        <>
+          <button className={styles.laterToggle} onClick={() => setShowLater(s => !s)} aria-expanded={showLater}>
+            <SectionHeader label="Planned for later" count={later.length} accent="#8b5cf6" />
+          </button>
+          {showLater && (
+            <div className={styles.list}>
+              {later.map(t => (
+                <TaskRow key={t.id} task={t} showDate {...rowProps} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      <p className={styles.note}>To plan another day, say the day in the task: “Call collector tomorrow” or “Submit report on {format(addDays(new Date(), 3), 'd MMM')}”.</p>
     </div>
   )
 }

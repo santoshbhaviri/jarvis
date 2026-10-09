@@ -3,23 +3,15 @@
 A dark-themed, mobile-first productivity app you install on your phone. Two goals: work on what matters most, and never lose track of anything.
 
 ## Features
-- **Quick capture**: speak (🎙️) or type a task in plain words at the top of every tab. "Follow up with DEO on survey by Friday !" becomes a Mission due Friday, marked Important, with a follow-up on DEO
-- **Today** tab: Top 3 focus tasks (☆), follow-ups to make, overdue, due today, routines left
-- **Priorities** tab: Eisenhower grid (Do now / Schedule / Delegate / Drop) from the Important and Urgent flags
-- **Follow-ups**: "Follow up with" a person or office plus a date; tap 📞 after chasing and it comes back in 2 days
-- **Insights** tab: tasks finished per week, share of important work, routine consistency, tasks that keep getting postponed, and a weekly review
-- **Reminders**: 🔔 in the header turns on a morning summary notification
-- **Login**: each account sees only its own tasks
-- Edit any task with ⚙︎ (title, status, dates, priority, follow-up, notes)
-- **Routine** tab: 7-day week tracker per task
-- **Scut-Work** tab: Pending / Completed / Scheduled sections
-- **Mission** tab: Sorted by deadline, with extend option
-- **Task Master** tab: Add & delete all tasks centrally
-- Work / Personal / All radio filter on each tab
-- Extend tasks to a new date (scut-work & mission)
-- Edit notes inline per task
-- Completed tasks section per tab, cleared daily
-- Persistent storage via Supabase
+Three tabs, kept simple:
+
+- **☀️ Today**: the things you plan to do today. Add a task by speaking (🎙️) or typing at the top; say a day ("call DEO Friday") to plan it for later. Tap ☆ to highlight the important ones, which stay at the top. Tick a task when it is done.
+  - Anything not ticked off by midnight **moves to the next day automatically**, marked "Carried over · N days" so you can see what keeps slipping.
+  - The day card shows how many of today's tasks you finished.
+- **🔁 Tracker**: habits you want to keep up every day or a few times a week (gym, walk, reading). Tick today with one tap, see this week and this month at a glance (e.g. "Gym 3/4 this week · 11/17 this month"), and open the month calendar to fill in past days.
+- **✅ Done**: everything you finished, grouped by day. Tasks stay here for **30 days** and are then deleted automatically. Tap ↩ Restore to bring one back to today.
+- **Reminders**: 🔔 in the header turns on a morning summary notification (today's tasks, important ones, carried over).
+- **Login**: each account sees only its own tasks.
 
 ## Setup
 
@@ -31,7 +23,7 @@ npm install
 ### 2. Supabase
 - Create project at supabase.com
 - Run `supabase-schema.sql` in SQL Editor
-- Run `supabase-schema-update.sql`, then `supabase-schema-v3.sql`
+- Run `supabase-schema-update.sql`, then `supabase-schema-v3.sql` (safe to re-run; run it again whenever it changes, e.g. for the habit goal column)
 - Copy Project URL and anon key
 - Open the app, create your account and confirm the email
 - Claim your existing tasks: run the `update public.tasks set user_id = …` statement at the bottom of `supabase-schema-v3.sql` with your email
@@ -97,6 +89,7 @@ src/
 | What | Where |
 |------|-------|
 | Tab names / icons | `src/lib/constants.js` |
+| Days kept in Done | `BIN_DAYS` in `src/hooks/useTasks.js` |
 | Colors / fonts | `src/styles/global.css` |
 | DB queries | `src/hooks/useTasks.js` |
 | Add a new tab | `src/App.jsx` + new page component |

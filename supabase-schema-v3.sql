@@ -1,7 +1,7 @@
 -- ============================================================
 -- JARVIS — Schema v3 (run this in Supabase SQL Editor)
--- Adds: login (each person sees only their own tasks), priorities,
--- follow-ups, focus tasks, completion history and push reminders.
+-- Adds: login (each person sees only their own tasks), important flag,
+-- habit goals, the 30-day Done bin and push reminders.
 -- Safe to run more than once. Run supabase-schema-update.sql first
 -- if you have not already.
 -- ============================================================
@@ -14,7 +14,8 @@ alter table public.tasks add column if not exists waiting_on   text;
 alter table public.tasks add column if not exists follow_up    date;
 alter table public.tasks add column if not exists focus_date   date;          -- "Top 3 for today"
 alter table public.tasks add column if not exists postponed    integer not null default 0;
-alter table public.tasks add column if not exists completed_at timestamptz;   -- set when a scut-work / mission task is finished
+alter table public.tasks add column if not exists completed_at timestamptz;   -- set when a task is finished (kept 30 days in the Done bin)
+alter table public.tasks add column if not exists target_per_week integer;     -- habit goal, e.g. gym 4 days a week
 
 create index if not exists tasks_user_idx      on public.tasks(user_id);
 create index if not exists tasks_follow_up_idx on public.tasks(follow_up);

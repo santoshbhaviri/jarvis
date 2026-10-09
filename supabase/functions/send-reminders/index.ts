@@ -20,17 +20,14 @@ function localNow(offsetMin: number) {
 }
 
 function summary(tasks: any[], today: string) {
-  const open     = tasks.filter(t => t.status !== 'routine' && !t.completed_at)
-  const overdue  = open.filter(t => t.due_date && t.due_date < today).length
-  const dueToday = open.filter(t => t.due_date === today).length
-  const chase    = tasks.filter(t => !t.completed_at && t.waiting_on && t.follow_up && t.follow_up <= today).length
-  const focus    = open.filter(t => t.important).sort((a, b) => (a.due_date || '9').localeCompare(b.due_date || '9'))[0]
-  const parts: string[] = []
-  if (overdue)  parts.push(`${overdue} overdue`)
-  if (dueToday) parts.push(`${dueToday} due today`)
-  if (chase)    parts.push(`${chase} follow-up${chase > 1 ? 's' : ''} to make`)
-  const body = (parts.length ? parts.join(' · ') : 'Nothing due today.') + (focus ? `\nStart with: ${focus.title}` : '')
-  return body
+  const todo    = tasks.filter(t => t.status !== 'routine' && !t.completed_at && (!t.due_date || t.due_date <= today))
+  const starred = todo.filter(t => t.important)
+  const carried = todo.filter(t => t.is_unfinished || (t.due_date && t.due_date < today)).length
+  if (!todo.length) return 'Nothing planned yet. Add what you want to get done today.'
+  const parts = [`${todo.length} task${todo.length > 1 ? 's' : ''} for today`]
+  if (starred.length) parts.push(`${starred.length} important`)
+  if (carried) parts.push(`${carried} carried over`)
+  return parts.join(' · ') + (starred[0] ? `\nStart with: ${starred[0].title}` : '')
 }
 
 Deno.serve(async (req) => {
@@ -46,7 +43,7 @@ Deno.serve(async (req) => {
     if (s.last_sent_on === date || time < String(s.remind_at).slice(0, 5)) continue
 
     const { data: tasks } = await db.from('tasks')
-      .select('status,due_date,completed_at,waiting_on,follow_up,important,title')
+      .select('status,due_date,completed_at,is_unfinished,important,title')
       .eq('user_id', s.user_id)
     try {
       await webpush.sendNotification(s.subscription, JSON.stringify({

@@ -1,0 +1,39 @@
+/* src/components/TaskRow.module.css */
+.row {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 12px;
+}
+.important { border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.05); }
+.done { opacity: 0.55; }
+
+.check {
+  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
+  border: 2px solid var(--border2); background: transparent;
+  color: #fff; font-size: 13px; font-weight: 800; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.check:hover { border-color: var(--success); }
+.checked { background: var(--success); border-color: var(--success); }
+
+.body {
+  flex: 1; min-width: 0; text-align: left; background: none; color: inherit;
+  display: flex; flex-direction: column; gap: 5px; padding: 1px 0 0;
+}
+.title { font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.done .title { text-decoration: line-through; color: var(--text3); }
+.meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.meta:empty { display: none; }
+.chip {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+  background: var(--surface2); color: var(--text2);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.carried { background: rgba(245,158,11,0.15); color: #d97706; }
+
+.star {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 99px;
+  background: transparent; color: var(--text3); font-size: 18px; line-height: 1;
+}
+.star:hover { color: #f59e0b; }
+.starOn { color: #f59e0b; }

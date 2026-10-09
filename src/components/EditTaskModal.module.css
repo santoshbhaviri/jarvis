@@ -1,4 +1,4 @@
-/* src/components/AddTaskModal.module.css */
+/* src/components/EditTaskModal.module.css */
 .overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);

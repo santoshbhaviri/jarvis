@@ -1,15 +1,12 @@
 // src/lib/summary.js
-// One-line morning summary, used by in-app reminders (the edge function has its own copy)
-import { openTasks, followUpsDue } from './selectors'
-
+// One-line summary for reminders (the edge function has its own copy)
 export function daySummary(tasks, today) {
-  const open     = openTasks(tasks)
-  const overdue  = open.filter(t => t.due_date && t.due_date < today).length
-  const dueToday = open.filter(t => t.due_date === today).length
-  const chase    = followUpsDue(tasks, today).length
-  const parts = []
-  if (overdue)  parts.push(`${overdue} overdue`)
-  if (dueToday) parts.push(`${dueToday} due today`)
-  if (chase)    parts.push(`${chase} follow-up${chase > 1 ? 's' : ''} to make`)
-  return { count: overdue + dueToday + chase, text: parts.length ? parts.join(' · ') : 'Nothing due today. Pick your Top 3.' }
+  const todo    = tasks.filter(t => t.status !== 'routine' && !t.completed_at && t.due_date <= today)
+  const carried = todo.filter(t => t.is_unfinished).length
+  const starred = todo.filter(t => t.important).length
+  if (!todo.length) return { count: 0, text: 'Nothing planned yet. Add what you want to get done today.' }
+  const parts = [`${todo.length} task${todo.length > 1 ? 's' : ''} for today`]
+  if (starred) parts.push(`${starred} important`)
+  if (carried) parts.push(`${carried} carried over`)
+  return { count: todo.length, text: parts.join(' · ') }
 }

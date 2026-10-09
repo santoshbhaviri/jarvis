@@ -3,13 +3,12 @@
 import { useState, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { parseTask } from '../lib/parseTask'
-import { STATUSES } from '../lib/constants'
-import { formatDisplay } from '../lib/dateUtils'
+import { formatDisplay, todayStr } from '../lib/dateUtils'
 import styles from './QuickCapture.module.css'
 
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)
 
-export default function QuickCapture({ onAdd, onEdit }) {
+export default function QuickCapture({ onAdd }) {
   const [text, setText]           = useState('')
   const [listening, setListening] = useState(false)
   const [saving, setSaving]       = useState(false)
@@ -25,11 +24,9 @@ export default function QuickCapture({ onAdd, onEdit }) {
     setSaving(false)
     if (error) { toast.error(`Save failed: ${error.message}`); return }
     setText('')
-    toast.success(t => (
-      <span onClick={() => { toast.dismiss(t.id); onEdit(data) }} style={{ cursor: 'pointer' }}>
-        Added to {STATUSES[data.status].label}. Tap to edit
-      </span>
-    ))
+    toast.success(data.status === 'routine'
+      ? 'Added to Tracker'
+      : data.due_date === todayStr() ? 'Added to today' : `Planned for ${formatDisplay(data.due_date)}`)
   }
 
   const toggleMic = () => {
@@ -63,7 +60,7 @@ export default function QuickCapture({ onAdd, onEdit }) {
           className={styles.input}
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder="Say or type: Follow up with DEO on survey by Friday !"
+          placeholder="Say or type a task, e.g. Call DEO about survey"
           aria-label="New task"
         />
         <button type="button" onClick={toggleMic}
@@ -78,16 +75,15 @@ export default function QuickCapture({ onAdd, onEdit }) {
       {listening && <p className={styles.hint}>Listening… speak your task, then tap Add.</p>}
       {!listening && preview && (
         <p className={styles.hint}>
-          {STATUSES[preview.status].label}
-          {preview.due_date && ` · due ${formatDisplay(preview.due_date)}`}
-          {preview.important && ' · Important'}
-          {preview.urgent && ' · Urgent'}
-          {preview.waiting_on && ` · follow up with ${preview.waiting_on}`}
-          {` · ${preview.category}`}
+          {preview.status === 'routine'
+            ? 'Daily habit → Tracker'
+            : preview.due_date === todayStr() ? 'Today' : formatDisplay(preview.due_date)}
+          {preview.important && ' · ★ Important'}
+          {` · ${preview.category === 'work' ? 'Work' : 'Personal'}`}
         </p>
       )}
       {!listening && !preview && (
-        <p className={styles.hint}>Understands dates (tomorrow, Friday, 15 Oct), “follow up with …”, #personal, “daily”, and ! for important.</p>
+        <p className={styles.hint}>Add a day (tomorrow, Friday, 15 Oct) to plan ahead, #personal for home, ! to highlight.</p>
       )}
     </form>
   )

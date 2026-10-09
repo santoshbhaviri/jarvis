@@ -1,14 +1,13 @@
 // src/lib/parseTask.js
 // Turns a spoken or typed note into a task, e.g.
-//   "Follow up with DEO on survey by Friday #work !"
-//   → { title: 'Follow up with DEO on survey', due_date: <next Fri>, waiting_on: 'DEO', important: true, ... }
+//   "Call DEO about survey on Friday #work !"
+//   → { title: 'Call DEO about survey', due_date: <next Fri>, important: true, ... }
 //
 // Rules:
 //   dates      today, tomorrow, day after tomorrow, next week, Mon–Sun, 15/10, 15 Oct, Oct 15
-//   people     "follow up with X", "waiting on/for X", "chase X", "remind X"
 //   category   #work / #personal
-//   priority   "!" or the word important → important; urgent / asap / today → urgent
-//   status     daily / every day → routine; important → mission; anything else → scut-work
+//   highlight  "!" or the word important → important (★)
+//   status     daily / every day → routine (a Tracker habit); anything else → scut-work (a task)
 
 import { format, addDays, startOfWeek } from 'date-fns'
 
@@ -27,7 +26,7 @@ export function parseTask(text, now = new Date()) {
   const todayYmd = ymd(base)
   const task = {
     title: '', category: 'work', status: 'scut-work', due_date: '', notes: '',
-    important: false, urgent: false, waiting_on: '', follow_up: '',
+    important: false, urgent: false,
   }
   let s = ' ' + text.trim() + ' '
   const take = (re) => { const m = s.match(re); if (m) s = s.replace(m[0], ' '); return m }
@@ -66,17 +65,8 @@ export function parseTask(text, now = new Date()) {
     task.due_date = ymd(d)
   }
 
-  // Keyword is any case; a capitalised name runs until the first lowercase word ("DEO on survey" → DEO)
-  if ((m = s.match(/\b(?:[Ff]ollow[ -]?[Uu]p [Ww]ith|[Ww]aiting (?:[Oo]n|[Ff]or)|[Cc]hase|[Rr]emind)\s+(?:the\s+)?([A-Z][\w.]*(?:\s+[A-Z][\w.]*)*|[a-z]+)/))) {
-    task.waiting_on = m[1].trim()
-    task.follow_up  = task.due_date || ymd(addDays(base, 2))
-  }
-
-  if (daily)                task.status = 'routine'
-  else if (task.important)  task.status = 'mission'
-  if (task.status === 'routine') task.due_date = ''
-  if (task.status === 'scut-work' && !task.due_date) task.due_date = todayYmd
-  if (task.status === 'mission'   && !task.due_date) task.due_date = ymd(addDays(base, 7))
+  if (daily) { task.status = 'routine'; task.due_date = '' }
+  else if (!task.due_date) task.due_date = todayYmd
 
   let title = s.replace(/\s{2,}/g, ' ').replace(/\s+([,.])/g, '$1').trim().replace(/[,.;:-]+$/, '')
   if (!title) title = text.trim()
