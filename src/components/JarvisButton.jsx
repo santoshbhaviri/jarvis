@@ -188,7 +188,8 @@ export default function JarvisButton({ taskData }) {
               <>
                 <ul className={styles.preview}>
                   {preview.map((t, i) => (
-                    <li key={i}><span>{t.important ? '★ ' : ''}{t.title}</span><small>{dayLabel(t)}</small></li>
+                    <li key={i}><span>{t.important ? '★ ' : ''}{t.title}</span>
+                      <small>{dayLabel(t)}{t.notes?.startsWith('↻ ') ? ` · ${t.notes.slice(2)}` : ''}{t.follow_up ? ' · ⏳ follow up' : ''}</small></li>
                   ))}
                 </ul>
                 <button className={styles.primary} onClick={() => go(text, 'task')}>

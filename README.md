@@ -9,9 +9,13 @@ Three tabs, kept simple:
   - **Tasks**: "On 21st call the DEO and send the survey report, also book train tickets tomorrow" → three tasks, each on its day. Understands today, tomorrow, Friday, 15 Oct, on 21st, in 3 days, next week/month; "every day" makes a Tracker habit. Undo is one tap.
   - **Questions**: "Latest news on Rythu Bharosa", "Polish this: …" → free answers from Google's AI Mode (or ChatGPT / Claude), or inside Jarvis once the free Gemini key is added (below).
   - **App changes**: "Jarvis should show a weekly summary" → a request on GitHub; Claude builds it and sends a preview to approve.
-- **☀️ Today**: the things you plan to do today. Tap ☆ to highlight the important ones, which stay at the top. Tick a task when it is done.
+- **Repeating tasks**: "Every Monday submit report", "pay rent on the 1st of every month", "every 3 days". Tick one and the next is added (shown as ↻ on the task).
+- **Follow-ups**: "Waiting for Collector's reply" comes back in 3 days (⏳) unless you give a day.
+- **☀️ Today**: the card at the top shows the one thing to do **next** (Done / Later); the rest of today is below. Tap ☆ to highlight the important ones, which stay at the top. Tick a task when it is done.
   - Anything not ticked off by midnight **moves to the next day automatically**, marked "↪ N days" so you can see what keeps slipping.
   - The day card shows how many of today's tasks you finished.
+  - After 8 pm an **evening wrap-up** lists what's left: done, tomorrow or drop, or all to tomorrow in one tap.
+- **Works offline**: Jarvis opens with no signal; tasks you add or tick wait on the phone and sync when you're back online.
 - **🔁 Tracker**: habits you want to keep up every day or a few times a week (gym, walk, reading). Tick today with one tap, see this week and this month at a glance (e.g. "Gym 3/4 this week · 11/17 this month"), and open the month calendar to fill in past days.
 - **✅ Done**: everything you finished, grouped by day. Tasks stay here for **30 days** and are then deleted automatically. Tap ↩ Restore to bring one back to today.
 - **Reminders**: 🔔 in the header turns on a morning summary notification (today's tasks, important ones, carried over).
@@ -79,6 +83,12 @@ Android: open the Netlify URL in Chrome and tap **Install** on the card. iPhone:
      $$);
      ```
   5. Open the app on your phone and tap 🔔. The summary arrives at 08:00 your time (change `remind_at` in `push_subscriptions` for another time).
+
+## Security checklist (one time)
+- GitHub repo → Settings → **Change visibility → Private**. The old Supabase key is still in the repo's history, so also make a new key: Supabase → Project Settings → API → regenerate the anon key, and put the new one in Netlify (`VITE_SUPABASE_ANON_KEY`).
+- Supabase → Authentication → Sign In / Providers → turn off **Allow new users to sign up**, once your own account exists.
+- Turn on two-step login for GitHub and Netlify.
+- Already built in: each account sees only its own tasks; only `JARVIS_OWNER_EMAIL` can use the server functions; security headers in `netlify.toml` stop other sites embedding or injecting into Jarvis; the copy of tasks on the phone is cleared on sign-out.
 
 ## Switch on the extras (optional, free, one time)
 All keys go in one place: Netlify → your site → **Site configuration → Environment variables → Add a variable**. They stay on the server, never on the phone. Redeploy once afterwards (Deploys → Trigger deploy).

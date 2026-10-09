@@ -9,8 +9,11 @@
 //   category   #work / #personal
 //   highlight  "!" or the word important → important (★)
 //   status     daily / every day → routine (a Tracker habit); anything else → scut-work (a task)
+//   repeat     every Monday, weekly, on the 1st of every month, every 3 days → comes back each time
+//   follow-up  "Waiting for Collector's reply" → comes back in 3 days unless a day is given
 
 import { format, addDays, addMonths, startOfWeek, startOfMonth } from 'date-fns'
+import { takeRepeat, firstOn, repeatNote } from './repeat'
 
 const MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
 const WD3    = ['sun','mon','tue','wed','thu','fri','sat']
@@ -27,7 +30,7 @@ export function parseTask(text, now = new Date()) {
   const todayYmd = ymd(base)
   const task = {
     title: '', category: 'work', status: 'scut-work', due_date: '', notes: '',
-    important: false, urgent: false,
+    important: false, urgent: false, follow_up: null, waiting_on: null,
   }
   let s = ' ' + text.trim() + ' '
   const take = (re) => { const m = s.match(re); if (m) s = s.replace(m[0], ' '); return m }
@@ -41,6 +44,8 @@ export function parseTask(text, now = new Date()) {
 
   let daily = false
   if (take(/\b(every ?day|daily)\b/i)) daily = true
+  const rep = daily ? null : takeRepeat(s)
+  if (rep) s = rep.text
 
   const by = '(?:by |on |before |due |for |this |coming )?'
   if ((m = take(new RegExp('\\b' + by + 'day after tomorrow\\b', 'i')))) task.due_date = ymd(addDays(base, 2))
@@ -83,6 +88,13 @@ export function parseTask(text, now = new Date()) {
   }
 
   const dated = !!task.due_date
+  if (rep) {
+    const rule = rep.rule
+    if (rule.kind === 'week' && rule.day == null) rule.day = (dated ? new Date(task.due_date) : base).getDay()
+    if (rule.kind === 'month' && rule.date == null) rule.date = dated ? Number(task.due_date.slice(8, 10)) : base.getDate()
+    if (!dated) task.due_date = ymd(firstOn(rule, base))
+    task.notes = repeatNote(rule)
+  }
   if (daily) { task.status = 'routine'; task.due_date = '' }
   else if (!task.due_date) task.due_date = todayYmd
 
@@ -90,9 +102,19 @@ export function parseTask(text, now = new Date()) {
   title = stripFiller(title)
   if (!title) title = text.trim()
   task.title = title.charAt(0).toUpperCase() + title.slice(1)
+
+  // Waiting on someone: it comes back in 3 days to chase, unless a day was given
+  const wait = !daily && task.title.match(FOLLOW)
+  if (wait) {
+    if (!dated && !rep) task.due_date = ymd(addDays(base, 3))
+    task.follow_up = task.due_date
+    task.waiting_on = (wait[1] || '').replace(/'s$/i, '').trim() || null
+  }
   Object.defineProperty(task, 'dated', { value: dated })   // said a day? (not saved)
   return task
 }
+
+const FOLLOW = /\b(?:waiting (?:for|on)|awaiting|await|follow ?up (?:with|on)|chase|pending (?:from|with))\s+(?:the\s+|a\s+)?([\w.]+(?:'s)?)/i
 
 const NUMBERS = { a: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, ten: 10 }
 

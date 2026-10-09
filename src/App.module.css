@@ -12,3 +12,7 @@
   padding: 8px 12px; border-radius: var(--radius); background: var(--missed-soft);
 }
 .loading { font-size: 13px; color: var(--text3); text-align: center; padding: 12px; }
+.offline {
+  display: inline-block; font-size: 12px; font-weight: 600; color: var(--text2);
+  background: var(--surface2); border-radius: 99px; padding: 5px 12px; margin-bottom: 12px;
+}

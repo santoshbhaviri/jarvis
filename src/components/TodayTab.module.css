@@ -18,3 +18,25 @@
 .none { text-align: center; color: var(--text3); font-size: 13px; padding: 18px 8px; line-height: 1.5; }
 .note { font-size: 11px; color: var(--text3); margin-top: 8px; line-height: 1.5; }
 .laterToggle { display: block; width: 100%; background: none; text-align: left; padding: 0; color: inherit; }
+
+/* Next task, inside the day card */
+.now { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.nowLabel { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.6px; }
+.nowTitle { background: none; text-align: left; padding: 0; color: var(--text); font-size: 18px; font-weight: 600; line-height: 1.3; }
+.nowActions { display: flex; gap: 8px; }
+.nowDone, .nowLater { padding: 9px 18px; border-radius: 99px; font-size: 13px; font-weight: 700; }
+.nowDone { background: var(--accent); color: var(--on-accent); }
+.nowLater { background: var(--surface2); color: var(--text2); }
+
+/* Evening wrap-up */
+.wrap { background: var(--surface); border: 1px solid var(--accent-soft); border-radius: var(--radius-xl); padding: 14px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+.wrapHead { display: flex; justify-content: space-between; align-items: baseline; }
+.wrapHead strong { font-size: 15px; }
+.wrapHead span { font-size: 12px; color: var(--text3); font-weight: 600; }
+.wrapRow { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid var(--border); }
+.wrapTitle { flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.wrapRow button { flex-shrink: 0; padding: 6px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface2); color: var(--text); }
+.wrapRow .wrapDrop { color: var(--text3); background: none; }
+.wrapFoot { display: flex; gap: 8px; margin-top: 4px; }
+.toast { display: flex; align-items: center; gap: 10px; }
+.toast button { background: none; color: var(--accent); font-weight: 700; }

@@ -55,6 +55,9 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
 
       <main className={styles.main}>
         {activeTab === 'today' && <InstallBanner />}
+        {taskData.offline && (
+          <p className={styles.offline}>Offline{taskData.pending ? ` · ${taskData.pending} change${taskData.pending > 1 ? 's' : ''} will sync` : ''}</p>
+        )}
         {taskData.error && <p className={styles.error}>Could not load tasks: {taskData.error}</p>}
         {taskData.loading && !taskData.tasks.length && <p className={styles.loading}>Loading…</p>}
 
