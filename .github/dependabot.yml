@@ -1,0 +1,12 @@
+# Free GitHub service: opens a pull request when a library Jarvis uses gets
+# a security fix or update. Updates are grouped into one PR a month.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      all-dependencies:
+        patterns: ["*"]
+    open-pull-requests-limit: 3

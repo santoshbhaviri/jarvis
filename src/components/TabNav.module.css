@@ -12,8 +12,9 @@
 .inner::-webkit-scrollbar { display: none; }
 
 .tab {
+  flex: 1 1 0; min-width: 0; justify-content: center;
   display: flex; align-items: center; gap: 5px;
-  padding: 7px 15px;
+  padding: 7px 8px;
   border-radius: 99px;
   border: 1.5px solid var(--border2);
   background: transparent;
@@ -22,13 +23,13 @@
   white-space: nowrap;
   transition: all 0.2s;
 }
-.tab:hover { border-color: var(--accent1); color: var(--accent1); }
+.tab:hover:not(.active) { border-color: var(--accent1); color: var(--accent1); }
 
 .active {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: var(--accent);
   border-color: transparent;
-  color: #fff;
-  box-shadow: 0 0 16px rgba(99,102,241,0.4);
+  color: var(--on-accent);
+  box-shadow: var(--accent-glow);
 }
 
 .icon  { font-size: 14px; }
@@ -36,6 +37,6 @@
 
 @media(min-width:640px){
   .inner { padding: 12px 24px; gap: 10px; }
-  .tab   { padding: 8px 18px; font-size: 13px; }
+  .tab   { flex: 0 0 auto; padding: 8px 18px; font-size: 13px; }
   .label { font-size: 13px; }
 }

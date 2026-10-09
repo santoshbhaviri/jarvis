@@ -1,0 +1,31 @@
+/* src/components/QuickCapture.module.css */
+.wrap { margin-bottom: 16px; }
+.bar  { display: flex; gap: 8px; }
+.input {
+  flex: 1; min-width: 0;
+  padding: 12px 14px;
+  background: var(--surface); border: 1.5px solid var(--border2);
+  border-radius: var(--radius-lg); color: var(--text);
+  font-size: 14px; outline: none;
+}
+.input:focus { border-color: var(--accent1); }
+.mic, .add {
+  border-radius: var(--radius-lg); font-weight: 700; flex-shrink: 0;
+}
+.mic {
+  width: 46px; font-size: 18px;
+  background: var(--surface); border: 1.5px solid var(--border2);
+}
+.micOn {
+  border-color: var(--danger);
+  background: var(--missed-soft);
+  animation: pulse 1.2s infinite;
+}
+.add {
+  padding: 0 18px; color: var(--on-accent); font-size: 13px;
+  background: var(--accent);
+}
+.add:disabled { opacity: 0.45; cursor: not-allowed; }
+.hint { font-size: 11px; color: var(--text3); margin-top: 6px; padding-left: 4px; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--missed-soft); } }
+@media (prefers-reduced-motion: reduce) { .micOn { animation: none; } }

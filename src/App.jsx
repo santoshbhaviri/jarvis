@@ -1,50 +1,62 @@
 // src/App.jsx
 import { useState } from 'react'
-import { useTasks }    from './hooks/useTasks'
-import { useTheme }    from './hooks/useTheme'
-import Header          from './components/Header'
-import TabNav          from './components/TabNav'
-import RadioFilter     from './components/RadioFilter'
-import RoutineTab      from './components/RoutineTab'
-import ScutWorkTab     from './components/ScutWorkTab'
-import MissionTab      from './components/MissionTab'
-import TaskMasterTab   from './components/TaskMasterTab'
-import AddTaskModal    from './components/AddTaskModal'
-import styles          from './App.module.css'
+import { useAuth }      from './hooks/useAuth'
+import { useTasks }     from './hooks/useTasks'
+import { useTheme }     from './hooks/useTheme'
+import { useReminders } from './hooks/useReminders'
+import Header        from './components/Header'
+import TabNav        from './components/TabNav'
+import TodayTab      from './components/TodayTab'
+import TrackerTab    from './components/TrackerTab'
+import DoneTab       from './components/DoneTab'
+import AskTab        from './components/AskTab'
+import EditTaskModal from './components/EditTaskModal'
+import InstallBanner from './components/InstallBanner'
+import LoginScreen   from './components/LoginScreen'
+import styles        from './App.module.css'
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('routine')
-  const [catFilter, setCatFilter] = useState('all')
-  const [showAdd, setShowAdd]     = useState(false)
-
-  const taskData        = useTasks()
+  const auth = useAuth()
   const { isDark, toggle } = useTheme()
 
-  const showFilter = activeTab !== 'taskmaster'
+  if (auth.session === undefined) return null   // checking saved login
+  if (!auth.session) return <LoginScreen onSignIn={auth.signIn} onSignUp={auth.signUp} />
+  // key: a different account gets a fresh task list
+  return <Workspace key={auth.user.id} isDark={isDark} onToggleTheme={toggle} onSignOut={auth.signOut} />
+}
+
+function Workspace({ isDark, onToggleTheme, onSignOut }) {
+  const [activeTab, setActiveTab] = useState('today')
+  const [editing, setEditing]     = useState(null)
+
+  const taskData  = useTasks()
+  const reminders = useReminders(taskData.tasks, taskData.loading)
+
+  // Keep the modal in sync with the latest saved copy of the task
+  const editingTask = editing && (taskData.tasks.find(t => t.id === editing.id) || editing)
 
   return (
     <div className={styles.app}>
-      <Header isDark={isDark} onToggleTheme={toggle} />
+      <Header isDark={isDark} onToggleTheme={onToggleTheme} reminders={reminders} onSignOut={onSignOut} />
       <TabNav active={activeTab} onChange={setActiveTab} />
 
       <main className={styles.main}>
-        {showFilter && (
-          <RadioFilter value={catFilter} onChange={setCatFilter} />
-        )}
+        {activeTab !== 'ask' && <InstallBanner />}
+        {taskData.error && <p className={styles.error}>Could not load tasks: {taskData.error}</p>}
+        {taskData.loading && !taskData.tasks.length && <p className={styles.loading}>Loading…</p>}
 
-        {activeTab === 'routine'    && <RoutineTab    catFilter={catFilter} taskData={taskData} />}
-        {activeTab === 'scut-work'  && <ScutWorkTab   catFilter={catFilter} taskData={taskData} />}
-        {activeTab === 'mission'    && <MissionTab    catFilter={catFilter} taskData={taskData} />}
-        {activeTab === 'taskmaster' && (
-          <TaskMasterTab taskData={taskData} onAdd={() => setShowAdd(true)} />
-        )}
+        {activeTab === 'today'   && <TodayTab   taskData={taskData} onEdit={setEditing} />}
+        {activeTab === 'tracker' && <TrackerTab taskData={taskData} onEdit={setEditing} />}
+        {activeTab === 'ask'     && <AskTab     taskData={taskData} />}
+        {activeTab === 'done'    && <DoneTab    taskData={taskData} />}
       </main>
 
-      {showAdd && (
-        <AddTaskModal
-          onClose={() => setShowAdd(false)}
-          onSave={taskData.addTask}
-          onSaveBulk={taskData.addTasks}
+      {editingTask && (
+        <EditTaskModal
+          task={editingTask}
+          onClose={() => setEditing(null)}
+          onSave={taskData.updateTask}
+          onDelete={taskData.deleteTask}
         />
       )}
     </div>
