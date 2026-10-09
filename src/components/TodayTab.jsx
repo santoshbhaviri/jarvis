@@ -48,7 +48,7 @@ export default function TodayTab({ taskData, onEdit }) {
 
       <QuickCapture onAdd={addTask} />
 
-      <SectionHeader label="To do today" count={todo.length} accent="#6366f1" />
+      <SectionHeader label="To do today" count={todo.length} accent="var(--accent)" />
       <div className={styles.list}>
         {todo.map(t => <TaskRow key={t.id} task={t} {...rowProps} />)}
         {todo.length === 0 && total > 0 && <p className={styles.none}>All done for today. 🎉</p>}
@@ -60,7 +60,7 @@ export default function TodayTab({ taskData, onEdit }) {
 
       {done.length > 0 && (
         <>
-          <SectionHeader label="Done today" count={done.length} accent="#22c55e" />
+          <SectionHeader label="Done today" count={done.length} accent="var(--done)" />
           <div className={styles.list}>
             {done.map(t => <TaskRow key={t.id} task={t} done {...rowProps} />)}
           </div>
@@ -70,7 +70,7 @@ export default function TodayTab({ taskData, onEdit }) {
       {later.length > 0 && (
         <>
           <button className={styles.laterToggle} onClick={() => setShowLater(s => !s)} aria-expanded={showLater}>
-            <SectionHeader label="Planned for later" count={later.length} accent="#8b5cf6" />
+            <SectionHeader label="Planned for later" count={later.length} accent="var(--text3)" />
           </button>
           {showLater && (
             <div className={styles.list}>

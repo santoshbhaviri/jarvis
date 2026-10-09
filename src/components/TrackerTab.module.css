@@ -8,8 +8,8 @@
 .select { flex: 0 0 auto; }
 .input:focus, .select:focus { border-color: var(--accent1); }
 .addBtn {
-  padding: 0 18px; border-radius: var(--radius-lg); color: #fff; font-weight: 700; font-size: 13px;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  padding: 0 18px; border-radius: var(--radius-lg); color: var(--on-accent); font-weight: 700; font-size: 13px;
+  background: var(--accent);
 }
 .addBtn:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -22,7 +22,7 @@
 .bigCheck {
   width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
   border: 2px solid var(--border2); background: transparent;
-  color: #fff; font-size: 18px; font-weight: 800; line-height: 1;
+  color: var(--on-accent); font-size: 18px; font-weight: 800; line-height: 1;
 }
 .bigCheck:hover { border-color: var(--success); }
 .bigChecked { background: var(--success); border-color: var(--success); }
@@ -43,7 +43,7 @@
 }
 .dayName { font-size: 10px; font-weight: 700; color: var(--text3); }
 .dayMark { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.dayDone { background: rgba(34,197,94,0.18); color: #22c55e; }
+.dayDone { background: var(--done-soft); color: var(--done); }
 .dayToday { border-color: var(--accent1); }
 .dayFuture { opacity: 0.4; cursor: default; }
 .cellBtn { font: inherit; cursor: pointer; }

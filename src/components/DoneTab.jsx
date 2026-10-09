@@ -54,7 +54,7 @@ export default function DoneTab({ taskData }) {
       </p>
       {Object.entries(byDay).map(([day, list]) => (
         <section key={day}>
-          <SectionHeader label={label(day)} count={list.length} accent="#22c55e" />
+          <SectionHeader label={label(day)} count={list.length} accent="var(--done)" />
           <ul className={styles.list}>
             {list.map(t => {
               const left = BIN_DAYS - differenceInCalendarDays(new Date(), new Date(t.completed_at))

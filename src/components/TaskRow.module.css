@@ -4,13 +4,13 @@
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 12px;
 }
-.important { border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.05); }
+.important { border-left: 3px solid var(--star); background: var(--star-soft); }
 .done { opacity: 0.55; }
 
 .check {
   width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
   border: 2px solid var(--border2); background: transparent;
-  color: #fff; font-size: 13px; font-weight: 800; line-height: 1;
+  color: var(--on-accent); font-size: 13px; font-weight: 800; line-height: 1;
   display: flex; align-items: center; justify-content: center;
 }
 .check:hover { border-color: var(--success); }
@@ -29,11 +29,11 @@
   background: var(--surface2); color: var(--text2);
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.carried { background: rgba(245,158,11,0.15); color: #d97706; }
+.carried { background: var(--star-soft); color: var(--star-text); }
 
 .star {
   flex-shrink: 0; width: 32px; height: 32px; border-radius: 99px;
   background: transparent; color: var(--text3); font-size: 18px; line-height: 1;
 }
-.star:hover { color: #f59e0b; }
-.starOn { color: #f59e0b; }
+.star:hover { color: var(--star); }
+.starOn { color: var(--star); }

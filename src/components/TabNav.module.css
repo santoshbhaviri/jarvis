@@ -22,13 +22,13 @@
   white-space: nowrap;
   transition: all 0.2s;
 }
-.tab:hover { border-color: var(--accent1); color: var(--accent1); }
+.tab:hover:not(.active) { border-color: var(--accent1); color: var(--accent1); }
 
 .active {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: var(--accent);
   border-color: transparent;
-  color: #fff;
-  box-shadow: 0 0 16px rgba(99,102,241,0.4);
+  color: var(--on-accent);
+  box-shadow: var(--accent-glow);
 }
 
 .icon  { font-size: 14px; }

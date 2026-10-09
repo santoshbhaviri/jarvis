@@ -18,14 +18,14 @@
 }
 .micOn {
   border-color: var(--danger);
-  background: rgba(239,68,68,0.15);
+  background: var(--missed-soft);
   animation: pulse 1.2s infinite;
 }
 .add {
-  padding: 0 18px; color: #fff; font-size: 13px;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  padding: 0 18px; color: var(--on-accent); font-size: 13px;
+  background: var(--accent);
 }
 .add:disabled { opacity: 0.45; cursor: not-allowed; }
 .hint { font-size: 11px; color: var(--text3); margin-top: 6px; padding-left: 4px; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0.15); } }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--missed-soft); } }
 @media (prefers-reduced-motion: reduce) { .micOn { animation: none; } }

@@ -17,8 +17,8 @@
 }
 .input:focus { border-color: var(--accent1); }
 .btn {
-  margin-top: 12px; padding: 12px; border-radius: var(--radius); color: #fff; font-weight: 800; font-size: 14px;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  margin-top: 12px; padding: 12px; border-radius: var(--radius); color: var(--on-accent); font-weight: 800; font-size: 14px;
+  background: var(--accent);
 }
 .btn:disabled { opacity: 0.5; }
 .link { background: none; color: var(--accent1); font-size: 12px; font-weight: 600; padding: 6px; }

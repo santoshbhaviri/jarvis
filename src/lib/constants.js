@@ -5,6 +5,6 @@ export const TABS = [
 ]
 
 export const CATEGORIES = {
-  work:     { label: 'Work',     icon: '💼', color: '#6366f1', bg: '#eef2ff' },
-  personal: { label: 'Personal', icon: '🏠', color: '#ec4899', bg: '#fdf2f8' },
+  work:     { label: 'Work',     icon: '💼', color: 'var(--text2)' },
+  personal: { label: 'Personal', icon: '🏠', color: 'var(--text2)' },
 }
