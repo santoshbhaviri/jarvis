@@ -42,39 +42,32 @@ export default function DoneTab({ taskData }) {
   if (!finished.length) return (
     <div className={styles.empty}>
       <div className={styles.emptyIcon}>✅</div>
-      <p>Tasks you finish show up here for {BIN_DAYS} days, then they are deleted automatically.</p>
+      <p>Finished tasks stay here for {BIN_DAYS} days.</p>
     </div>
   )
 
   return (
     <div>
-      <p className={styles.intro}>
-        {finished.length} task{finished.length > 1 ? 's' : ''} finished in the last {BIN_DAYS} days.
-        Each is deleted automatically {BIN_DAYS} days after you finish it.
-      </p>
       {Object.entries(byDay).map(([day, list]) => (
         <section key={day}>
           <SectionHeader label={label(day)} count={list.length} accent="var(--done)" />
           <ul className={styles.list}>
             {list.map(t => {
-              const left = BIN_DAYS - differenceInCalendarDays(new Date(), new Date(t.completed_at))
               return (
                 <li key={t.id} className={styles.item}>
                   <span className={styles.tick}>✓</span>
                   <div className={styles.body}>
                     <span className={styles.title}>{t.title}</span>
                     <span className={styles.meta}>
-                      Done {format(new Date(t.completed_at), 'h:mm a')}
-                      {t.postponed > 0 && ` · carried over ${t.postponed} day${t.postponed > 1 ? 's' : ''}`}
-                      {` · deleted in ${Math.max(left, 0)} day${left === 1 ? '' : 's'}`}
+                      {format(new Date(t.completed_at), 'h:mm a')}
                     </span>
                   </div>
                   <div className={styles.actions}>
-                    <button className={styles.btn} onClick={() => restore(t)} title="Not done after all: move it back to today">↩ Restore</button>
+                    <button className={styles.btn} onClick={() => restore(t)} title="Move back to today">Restore</button>
                     <button className={`${styles.btn} ${styles.del} ${armed === t.id ? styles.armed : ''}`}
                       onClick={() => remove(t)}
                       onBlur={() => setArmed(a => a === t.id ? null : a)}>
-                      {armed === t.id ? 'Delete now?' : '🗑'}
+                      {armed === t.id ? 'Delete?' : '🗑'}
                     </button>
                   </div>
                 </li>

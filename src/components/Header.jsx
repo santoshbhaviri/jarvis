@@ -1,5 +1,4 @@
 // src/components/Header.jsx
-import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import styles from './Header.module.css'
 
@@ -29,10 +28,8 @@ export default function Header({ isDark, onToggleTheme, reminders, onSignOut }) 
           <span className={styles.name}>JARVIS</span>
         </div>
 
-        {/* Right side: date + theme toggle */}
+        {/* Right side: reminders, theme, sign out */}
         <div className={styles.right}>
-          <span className={styles.date}>{format(new Date(), 'EEE, dd MMM yyyy')}</span>
-
           <button
             className={styles.iconBtn}
             onClick={bell}
@@ -48,7 +45,6 @@ export default function Header({ isDark, onToggleTheme, reminders, onSignOut }) 
             aria-label="Toggle theme"
           >
             <span className={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</span>
-            <span className={styles.themeLabel}>{isDark ? 'Light' : 'Dark'}</span>
             {/* Toggle track */}
             <span className={`${styles.track} ${!isDark ? styles.trackOn : ''}`}>
               <span className={styles.thumb} />

@@ -1,6 +1,7 @@
 // src/components/LoginScreen.jsx
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import InstallBanner from './InstallBanner'
 import styles from './LoginScreen.module.css'
 
 export default function LoginScreen({ onSignIn, onSignUp }) {
@@ -34,6 +35,7 @@ export default function LoginScreen({ onSignIn, onSignUp }) {
           {mode === 'in' ? 'First time? Create an account' : 'Already have an account? Sign in'}
         </button>
       </form>
+      <div className={styles.install}><InstallBanner /></div>
     </div>
   )
 }

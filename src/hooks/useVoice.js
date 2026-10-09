@@ -5,8 +5,11 @@ import toast from 'react-hot-toast'
 
 const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)
 
-// onText(fullText) is called as words arrive; `before` is kept in front of what is said
-export function useVoice(onText) {
+export const voiceSupported = !!SpeechRecognition
+
+// onText(fullText) is called as words arrive; `before` is kept in front of what is said.
+// onEnd(fullText) is called once when listening stops.
+export function useVoice(onText, onEnd) {
   const [listening, setListening] = useState(false)
   const recRef = useRef(null)
 
@@ -20,19 +23,21 @@ export function useVoice(onText) {
     rec.lang = 'en-IN'
     rec.interimResults = true
     const prefix = before ? before + ' ' : ''
+    let heard = ''
     rec.onresult = (ev) => {
       let said = ''
       for (const r of ev.results) said += r[0].transcript
-      onText(prefix + said)
+      heard = prefix + said
+      onText(heard)
     }
     rec.onerror = (ev) => {
       if (ev.error === 'not-allowed') toast.error('Allow microphone access to use voice')
     }
-    rec.onend = () => { recRef.current = null; setListening(false) }
+    rec.onend = () => { recRef.current = null; setListening(false); if (heard.trim()) onEnd?.(heard) }
     recRef.current = rec
     rec.start()
     setListening(true)
-  }, [onText])
+  }, [onText, onEnd])
 
   return { listening, toggle }
 }

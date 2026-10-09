@@ -5,12 +5,15 @@ A dark-themed, mobile-first productivity app you install on your phone. Two goal
 ## Features
 Three tabs, kept simple:
 
-- **☀️ Today**: the things you plan to do today. Add a task by speaking (🎙️) or typing at the top; say a day ("call DEO Friday") to plan it for later. Tap ☆ to highlight the important ones, which stay at the top. Tick a task when it is done.
-  - Anything not ticked off by midnight **moves to the next day automatically**, marked "Carried over · N days" so you can see what keeps slipping.
+- **🎙️ Jarvis button** (bottom right, on every screen): tap and speak or type. Jarvis works out what you meant:
+  - **Tasks**: "On 21st call the DEO and send the survey report, also book train tickets tomorrow" → three tasks, each on its day. Understands today, tomorrow, Friday, 15 Oct, on 21st, in 3 days, next week/month; "every day" makes a Tracker habit. Undo is one tap.
+  - **Questions**: "Latest news on Rythu Bharosa", "Polish this: …" → free answers from Google's AI Mode (or ChatGPT / Claude), or inside Jarvis once the free Gemini key is added (below).
+  - **App changes**: "Jarvis should show a weekly summary" → a request on GitHub; Claude builds it and sends a preview to approve.
+- **☀️ Today**: the things you plan to do today. Tap ☆ to highlight the important ones, which stay at the top. Tick a task when it is done.
+  - Anything not ticked off by midnight **moves to the next day automatically**, marked "↪ N days" so you can see what keeps slipping.
   - The day card shows how many of today's tasks you finished.
 - **🔁 Tracker**: habits you want to keep up every day or a few times a week (gym, walk, reading). Tick today with one tap, see this week and this month at a glance (e.g. "Gym 3/4 this week · 11/17 this month"), and open the month calendar to fill in past days.
 - **✅ Done**: everything you finished, grouped by day. Tasks stay here for **30 days** and are then deleted automatically. Tap ↩ Restore to bring one back to today.
-- **✨ Ask**: speak or type to Claude. Ask questions (it searches the web when needed), have a message polished and send it by WhatsApp, SMS or email, or say what's on your mind and add the tasks it picks out. 🔊 reads an answer aloud. With no setup, questions open in the Claude app with today's tasks attached (free with a Claude account); with the optional setup below, answers come back inside Jarvis.
 - **Reminders**: 🔔 in the header turns on a morning summary notification (today's tasks, important ones, carried over).
 - **Login**: each account sees only its own tasks.
 
@@ -53,7 +56,7 @@ npm run dev                      # cmd / PowerShell
 ```
 
 ### 6. Install on your phone
-Open the Netlify URL in Chrome (Android) or Safari (iPhone) → menu → **Add to Home Screen**. Then tap 🔔 inside the app to allow reminders.
+Android: open the Netlify URL in Chrome and tap **Install** on the card. iPhone: it must be **Safari** (not Chrome or a link opened inside WhatsApp/Gmail): Share (on iOS 26: ••• → Share) → **Add to Home Screen** → keep *Open as Web App* on → **Add**. The card on the sign-in and Today screens shows these steps. Then tap 🔔 inside the app to allow reminders.
 
 ## Reminders
 - **While the app is open** (or was opened recently): after 7 am, JARVIS shows the day's summary once a day. Works with no extra setup.
@@ -77,17 +80,14 @@ Open the Netlify URL in Chrome (Android) or Safari (iPhone) → menu → **Add t
      ```
   5. Open the app on your phone and tap 🔔. The summary arrives at 08:00 your time (change `remind_at` in `push_subscriptions` for another time).
 
-## Ask Jarvis inside the app (optional)
-Ask Jarvis calls Claude from a Supabase Edge Function, so your API key stays on the server and never reaches the phone.
-1. Create an API key at https://console.anthropic.com (Settings → API keys) and add a little credit under Billing. It is pay-per-use.
-2. Install the Supabase CLI, then:
-   ```bash
-   supabase link --project-ref <your-project-ref>
-   supabase secrets set ANTHROPIC_API_KEY=<your key>
-   supabase functions deploy ask-jarvis
-   ```
-   (Without the CLI: Supabase dashboard → Edge Functions → Deploy a new function named `ask-jarvis`, paste `supabase/functions/ask-jarvis/index.ts`, then add `ANTHROPIC_API_KEY` under Edge Functions → Secrets.)
-3. Open the ✨ Ask tab. Only signed-in users can use it.
+## Answers inside the app (optional, free with Gemini)
+Without this, questions open in Google's AI Mode. With it, answers appear inside Jarvis, with buttons to add the tasks it found or send a message. The key stays on the server, never on the phone.
+1. Get a free key at https://aistudio.google.com/apikey (sign in with Google, **Create API key**). No card needed. Google's free tier has daily limits and may use what you send to improve its products, so don't send confidential office details.
+2. Supabase dashboard → **Edge Functions** → **Secrets** → add `GEMINI_API_KEY` = your key.
+3. **Edge Functions** → **Deploy a new function** → **Via Editor**, name it `ask-jarvis`, paste `supabase/functions/ask-jarvis/index.ts`, **Deploy**.
+   (With the CLI: `supabase secrets set GEMINI_API_KEY=<key>` and `supabase functions deploy ask-jarvis`.)
+
+Optional: `GEMINI_MODEL` picks another Gemini model (default `gemini-flash-latest`). Gemini's free tier can't search the web, so live news still goes to Google. The function also works with a paid Claude key (`ANTHROPIC_API_KEY`, used only when there is no Gemini key), which adds web search.
 
 Jarvis can open WhatsApp, SMS, email or the dialer with the text ready, but you always tap Send yourself; it cannot operate other apps or phone settings.
 

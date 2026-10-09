@@ -1,8 +1,10 @@
 // supabase/functions/ask-jarvis/index.ts
-// "Ask Jarvis": the app sends what you said (plus today's tasks) and Claude answers.
-// Claude can search the web, and can suggest tasks to add or a message to send.
+// "Ask Jarvis": the app sends what you said (plus today's tasks) and an AI answers,
+// suggesting tasks to add or a message to send when that helps.
+//   Free:  Google Gemini. Secret GEMINI_API_KEY (free key from aistudio.google.com).
+//          Optional GEMINI_MODEL to pick a model (default gemini-flash-latest).
+//   Paid:  Claude with web search. Secret ANTHROPIC_API_KEY. Used only when there is no Gemini key.
 // Deploy:  supabase functions deploy ask-jarvis
-// Secret:  supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 // Only signed-in Jarvis users can call it (Supabase checks the login token).
 import Anthropic from 'npm:@anthropic-ai/sdk@0.133.0'
 import { createClient } from 'npm:@supabase/supabase-js@2.43.4'
@@ -64,9 +66,73 @@ const suggestTool: Anthropic.Beta.BetaTool = {
 
 type Turn = { role: 'user' | 'assistant'; text: string }
 
+// ── Google Gemini (free tier) ──────────────────────────────────
+const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY')
+const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-flash-latest'
+
+const geminiSchema = {
+  type: 'OBJECT',
+  required: ['answer', 'tasks'],
+  properties: {
+    answer: { type: 'STRING', description: 'What you say back, plain text' },
+    tasks: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT', required: ['title', 'important'],
+        properties: {
+          title: { type: 'STRING' },
+          date: { type: 'STRING', format: 'date', nullable: true, description: 'YYYY-MM-DD, only if a day was given' },
+          important: { type: 'BOOLEAN' },
+        },
+      },
+    },
+    message: {
+      type: 'OBJECT', nullable: true, required: ['text'],
+      properties: {
+        text: { type: 'STRING' },
+        to: { type: 'STRING', nullable: true, description: 'Phone number or email if the user gave one' },
+        subject: { type: 'STRING', nullable: true },
+      },
+    },
+    call: { type: 'STRING', nullable: true, description: 'Phone number to call, only if the user gave one' },
+  },
+}
+
+async function askGemini(recent: Turn[], context: string) {
+  const contents = recent.map((t, i) => ({
+    role: t.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: i === recent.length - 1 ? `${context}\n\n${t.text}` : t.text }],
+  }))
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY! },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM.replace(/Use web search[^\n]*\n/, '').replace(/the suggest tool/g, 'its own field') +
+        '\nYou cannot search the web. For live news, prices or weather, give what you know and say the "Search Google" link under your answer has the latest.' }] },
+      contents,
+      generationConfig: { responseMimeType: 'application/json', responseSchema: geminiSchema, maxOutputTokens: 2048 },
+    }),
+  })
+  if (res.status === 429) return json({ error: 'busy' }, 429)
+  if (res.status === 400 || res.status === 401 || res.status === 403) {
+    const detail = await res.text()
+    return json({ error: /API key|PERMISSION|UNAUTHENTICATED/i.test(detail) ? 'bad_key' : 'api', detail }, 502)
+  }
+  if (!res.ok) return json({ error: 'api', detail: await res.text() }, 502)
+  const data = await res.json()
+  const raw = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? ''
+  try {
+    const out = JSON.parse(raw)
+    const actions = { tasks: out.tasks ?? [], message: out.message ?? null, call: out.call ?? null }
+    return json({ text: out.answer || 'Here you go.', actions })
+  } catch {
+    return json({ text: raw || "Sorry, I couldn't answer that one.", actions: null })
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  if (!Deno.env.get('ANTHROPIC_API_KEY')) return json({ error: 'not_configured' }, 503)
+  if (!GEMINI_KEY && !Deno.env.get('ANTHROPIC_API_KEY')) return json({ error: 'not_configured' }, 503)
 
   // Must be a signed-in Jarvis user
   const auth = req.headers.get('Authorization') ?? ''
@@ -79,6 +145,10 @@ Deno.serve(async (req) => {
   const { turns = [], context = '' } = await req.json() as { turns: Turn[]; context?: string }
   const recent = turns.slice(-10).filter(t => t.text?.trim())
   if (!recent.length || recent[recent.length - 1].role !== 'user') return json({ error: 'empty' }, 400)
+
+  if (GEMINI_KEY) {
+    try { return await askGemini(recent, context) } catch (err) { return json({ error: 'failed', detail: String(err) }, 500) }
+  }
 
   const messages: Anthropic.Beta.BetaMessageParam[] = recent.map(t => ({ role: t.role, content: t.text }))
   // Today's date and task list go in with the latest question only

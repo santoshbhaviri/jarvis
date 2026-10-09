@@ -47,7 +47,7 @@ export default function TrackerTab({ taskData, onEdit }) {
     <div>
       <form className={own.addForm} onSubmit={add}>
         <input className={own.input} value={title} onChange={e => setTitle(e.target.value)}
-          placeholder="New habit, e.g. Gym" aria-label="New habit" />
+          placeholder="New habit" aria-label="New habit" />
         <select className={own.select} value={target} onChange={e => setTarget(e.target.value)} aria-label="Goal per week">
           <option value="">Every day</option>
           {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}× a week</option>)}
@@ -56,10 +56,7 @@ export default function TrackerTab({ taskData, onEdit }) {
       </form>
 
       {habits.length === 0 && (
-        <div className={own.empty}>
-          <p><b>Track what you want to do regularly.</b></p>
-          <p>Add a habit like Gym (4× a week) or Morning walk (every day). Tick it each day you do it, and see how many days you managed this week and this month.</p>
-        </div>
+        <div className={own.empty}><p>Add a habit, like Gym 4× a week.</p></div>
       )}
 
       <div className={styles.list}>
@@ -101,7 +98,7 @@ function HabitCard({ task, today, weekDates, allMonthDates, monthStartDow, isDon
 
         <div className={styles.cardInfo}>
           <span className={styles.cardTitle}>{task.title}</span>
-          <span className={own.goal}>{task.target_per_week ? `Goal: ${task.target_per_week}× a week` : 'Goal: every day'}</span>
+          <span className={own.goal}>{task.target_per_week ? `${task.target_per_week}× a week` : 'Every day'}</span>
         </div>
 
         <div className={styles.topActions}>
@@ -141,7 +138,7 @@ function HabitCard({ task, today, weekDates, allMonthDates, monthStartDow, isDon
 
       {showCalendar && (
         <div className={styles.calendarWrap}>
-          <div className={styles.calendarLabel}>{format(new Date(), 'MMMM yyyy')} · tap a day to change it</div>
+          <div className={styles.calendarLabel}>{format(new Date(), 'MMMM yyyy')}</div>
           <div className={styles.calendarHeader}>
             {DOW_LABELS.map(d => <span key={d} className={styles.dowLabel}>{d}</span>)}
           </div>

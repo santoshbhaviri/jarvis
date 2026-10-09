@@ -2,16 +2,15 @@
 // The day's plan: what to do today (unfinished tasks carry over by themselves),
 // what got done, and anything already planned for later days.
 import { useState } from 'react'
-import { format, addDays } from 'date-fns'
+import { format } from 'date-fns'
 import { todayStr } from '../lib/dateUtils'
 import { doneDay } from '../hooks/useTasks'
-import QuickCapture  from './QuickCapture'
 import SectionHeader from './SectionHeader'
 import TaskRow       from './TaskRow'
 import styles        from './TodayTab.module.css'
 
 export default function TodayTab({ taskData, onEdit }) {
-  const { tasks, addTask, setDone, updateTask } = taskData
+  const { tasks, setDone, updateTask } = taskData
   const [showLater, setShowLater] = useState(true)
   const today    = todayStr()
 
@@ -46,21 +45,16 @@ export default function TodayTab({ taskData, onEdit }) {
         </div>
       </div>
 
-      <QuickCapture onAdd={addTask} />
-
-      <SectionHeader label="To do today" count={todo.length} accent="var(--accent)" />
+      <SectionHeader label="To do" count={todo.length} accent="var(--accent)" />
       <div className={styles.list}>
         {todo.map(t => <TaskRow key={t.id} task={t} {...rowProps} />)}
         {todo.length === 0 && total > 0 && <p className={styles.none}>All done for today. 🎉</p>}
-        {total === 0 && <p className={styles.none}>Nothing planned yet. Add what you want to get done today in the box above. Tap ☆ to highlight the most important ones.</p>}
+        {total === 0 && <p className={styles.none}>Nothing planned. Tap the Jarvis button to add.</p>}
       </div>
-      {todo.length > 0 && (
-        <p className={styles.note}>Anything not ticked off by midnight moves to tomorrow automatically.</p>
-      )}
 
       {done.length > 0 && (
         <>
-          <SectionHeader label="Done today" count={done.length} accent="var(--done)" />
+          <SectionHeader label="Done" count={done.length} accent="var(--done)" />
           <div className={styles.list}>
             {done.map(t => <TaskRow key={t.id} task={t} done {...rowProps} />)}
           </div>
@@ -70,7 +64,7 @@ export default function TodayTab({ taskData, onEdit }) {
       {later.length > 0 && (
         <>
           <button className={styles.laterToggle} onClick={() => setShowLater(s => !s)} aria-expanded={showLater}>
-            <SectionHeader label="Planned for later" count={later.length} accent="var(--text3)" />
+            <SectionHeader label="Later" count={later.length} accent="var(--text3)" />
           </button>
           {showLater && (
             <div className={styles.list}>
@@ -81,7 +75,6 @@ export default function TodayTab({ taskData, onEdit }) {
           )}
         </>
       )}
-      <p className={styles.note}>To plan another day, say the day in the task: “Call collector tomorrow” or “Submit report on {format(addDays(new Date(), 3), 'd MMM')}”.</p>
     </div>
   )
 }
