@@ -1,8 +1,8 @@
 // Updates: changes Claude has built for Jarvis, waiting for you, and requests still being built.
-// Try one, ask for a change, or drop it, all from here. Putting one live is a Merge tap on GitHub.
+// Try one, approve it (it goes live in a couple of minutes), ask for a change, or drop it.
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { changeUpdate, dropUpdate } from '../lib/server'
+import { approveUpdate, changeUpdate, dropUpdate } from '../lib/server'
 import styles from './Updates.module.css'
 
 export default function Updates({ data, onClose, onChanged }) {
@@ -36,7 +36,10 @@ function Update({ u, onChanged }) {
     setBusy(true)
     const res = await fn()
     setBusy(false)
-    if (res.error) { toast.error('Could not reach GitHub. Try again.'); return }
+    if (res.error) {
+      toast.error(res.error === 'not_mergeable' ? 'This one needs fixing first. Tap Change and say what you saw.' : 'Could not reach GitHub. Try again.')
+      return
+    }
     toast.success(done)
     setChanging(false); setNote('')
     onChanged()
@@ -48,7 +51,8 @@ function Update({ u, onChanged }) {
       {u.summary && <div className={styles.summary}>{u.summary}</div>}
       <div className={styles.actions}>
         <a className={styles.btn} href={u.preview} target="_blank" rel="noreferrer">Try it</a>
-        <a className={`${styles.btn} ${styles.primary}`} href={u.url} target="_blank" rel="noreferrer">Put live ↗</a>
+        <button className={`${styles.btn} ${styles.primary}`} disabled={busy}
+          onClick={() => act(() => approveUpdate(u.number), 'Approved. Live in a couple of minutes.')}>Approve</button>
         <button className={styles.btn} onClick={() => setChanging(c => !c)}>Change</button>
         <button className={`${styles.btn} ${styles.quiet}`} disabled={busy}
           onClick={() => act(() => dropUpdate(u.number), 'Dropped')}>Drop</button>

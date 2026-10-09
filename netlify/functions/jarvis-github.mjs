@@ -1,6 +1,7 @@
 // Lets Jarvis change itself without leaving the app:
 //   POST {action:'request', text}   → a new "[Jarvis] …" request on GitHub; Claude builds it
 //   GET                             → your requests and the updates waiting for you
+//   POST {action:'approve', number} → you approved it in the app: puts it live (merges; Netlify redeploys)
 //   POST {action:'change', number, text} → asks Claude to change that update
 //   POST {action:'drop', number}    → throws that update away
 // Needs GITHUB_TOKEN (fine-grained, this repo only: Contents, Issues, Pull requests = read & write)
@@ -25,6 +26,15 @@ async function gh(path, { method = 'GET', body } = {}) {
   const data = res.status === 204 ? null : await res.json().catch(() => null)
   if (!res.ok) throw Object.assign(new Error(data?.message || `GitHub ${res.status}`), { status: res.status })
   return data
+}
+
+// A draft has to be marked ready before it can be merged (GraphQL only)
+async function markReady(nodeId) {
+  await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env('GITHUB_TOKEN')}`, 'User-Agent': 'jarvis-app' },
+    body: JSON.stringify({ query: 'mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){clientMutationId}}', variables: { id: nodeId } }),
+  })
 }
 
 const firstLine = (s) => (s || '').split('\n').find(l => l.trim() && !/^(before:?\s*$|after:?\s*$|#|closes|fixes|resolves)/i.test(l.trim()))?.trim() || ''
@@ -66,6 +76,12 @@ export default async (req) => {
       return json({ ok: true, number: issue.number })
     }
     if (!Number.isInteger(number)) return json({ error: 'bad_request' }, 400)
+    if (action === 'approve') {
+      const pr = await gh(`/repos/${REPO}/pulls/${number}`)
+      if (pr.draft) await markReady(pr.node_id)
+      await gh(`/repos/${REPO}/pulls/${number}/merge`, { method: 'PUT', body: { merge_method: 'squash', commit_title: `${pr.title} (approved in Jarvis)` } })
+      return json({ ok: true })
+    }
     if (action === 'change') {
       if (!text.trim()) return json({ error: 'empty' }, 400)
       await gh(`/repos/${REPO}/issues/${number}/comments`, { method: 'POST', body: { body: 'Change request: ' + text.trim() + NOTE } })
@@ -79,6 +95,7 @@ export default async (req) => {
     return json({ error: 'bad_request' }, 400)
   } catch (err) {
     if (err.status === 401) return json({ error: 'bad_key' }, 502)
+    if (err.status === 405 || err.status === 409) return json({ error: 'not_mergeable' }, 409)
     return json({ error: 'api', detail: err.message }, 502)
   }
 }

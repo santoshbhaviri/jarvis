@@ -22,5 +22,6 @@ export const isReady = async (name) => (await call(name, { query: '?ping' })).re
 export const askJarvis    = (turns, context) => call('jarvis-ask', { method: 'POST', body: { turns, context } })
 export const listUpdates  = () => call('jarvis-github')
 export const sendRequest  = (text) => call('jarvis-github', { method: 'POST', body: { action: 'request', text } })
+export const approveUpdate = (number) => call('jarvis-github', { method: 'POST', body: { action: 'approve', number } })
 export const changeUpdate = (number, text) => call('jarvis-github', { method: 'POST', body: { action: 'change', number, text } })
 export const dropUpdate   = (number) => call('jarvis-github', { method: 'POST', body: { action: 'drop', number } })

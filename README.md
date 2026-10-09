@@ -87,14 +87,14 @@ All keys go in one place: Netlify → your site → **Site configuration → Env
 |---|---|---|
 | `JARVIS_OWNER_EMAIL` | Only your account can use the two below | Your Jarvis login email |
 | `GEMINI_API_KEY` | Answers appear inside Jarvis | https://aistudio.google.com/apikey → **Create API key** (free, no card). Google's free tier has daily limits and may use what you send to improve its products, so don't send confidential office details. |
-| `GITHUB_TOKEN` | App requests go straight from Jarvis to Claude, and ✨ Updates shows what Claude built for you to try, change or drop | GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate. Repository access: only `jarvis`. Permissions: Contents, Issues, Pull requests = Read and write. |
+| `GITHUB_TOKEN` | App requests go straight from Jarvis to Claude, and ✨ Updates shows what Claude built for you to try, approve (puts it live), change or drop | GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate. Repository access: only `jarvis`. Permissions: Contents, Issues, Pull requests = Read and write. |
 
 Optional: `GEMINI_MODEL` picks another Gemini model (default `gemini-flash-latest`). Gemini's free tier can't search the web, so live news still goes to Google.
 
 ### How Jarvis learns
 - When you correct Jarvis (tap Task / Ask / Improve app yourself), it remembers how that sentence started and gets it right next time.
 - Tasks you add on several days show up as one-tap suggestions when you open the Jarvis button.
-- Bigger changes come from you: say "Jarvis should …". Claude builds it every morning; it appears under ✨ Updates to try. Putting it live is a **Merge** tap on GitHub.
+- Bigger changes come from you: say "Jarvis should …". Claude builds it every morning; it appears under ✨ Updates to try, and **Approve** puts it live.
 
 Jarvis can open WhatsApp, SMS, email or the dialer with the text ready, but you always tap Send yourself; it cannot operate other apps or phone settings.
 
