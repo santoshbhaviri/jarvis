@@ -12,8 +12,9 @@
 .inner::-webkit-scrollbar { display: none; }
 
 .tab {
+  flex: 1 1 0; min-width: 0; justify-content: center;
   display: flex; align-items: center; gap: 5px;
-  padding: 7px 15px;
+  padding: 7px 8px;
   border-radius: 99px;
   border: 1.5px solid var(--border2);
   background: transparent;
@@ -36,6 +37,6 @@
 
 @media(min-width:640px){
   .inner { padding: 12px 24px; gap: 10px; }
-  .tab   { padding: 8px 18px; font-size: 13px; }
+  .tab   { flex: 0 0 auto; padding: 8px 18px; font-size: 13px; }
   .label { font-size: 13px; }
 }

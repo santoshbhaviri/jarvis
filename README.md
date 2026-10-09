@@ -10,6 +10,7 @@ Three tabs, kept simple:
   - The day card shows how many of today's tasks you finished.
 - **🔁 Tracker**: habits you want to keep up every day or a few times a week (gym, walk, reading). Tick today with one tap, see this week and this month at a glance (e.g. "Gym 3/4 this week · 11/17 this month"), and open the month calendar to fill in past days.
 - **✅ Done**: everything you finished, grouped by day. Tasks stay here for **30 days** and are then deleted automatically. Tap ↩ Restore to bring one back to today.
+- **✨ Ask**: speak or type to Claude. Ask questions (it searches the web when needed), have a message polished and send it by WhatsApp, SMS or email, or say what's on your mind and add the tasks it picks out. 🔊 reads an answer aloud. Needs a Claude API key (see "Ask Jarvis" below).
 - **Reminders**: 🔔 in the header turns on a morning summary notification (today's tasks, important ones, carried over).
 - **Login**: each account sees only its own tasks.
 
@@ -75,6 +76,20 @@ Open the Netlify URL in Chrome (Android) or Safari (iPhone) → menu → **Add t
      $$);
      ```
   5. Open the app on your phone and tap 🔔. The summary arrives at 08:00 your time (change `remind_at` in `push_subscriptions` for another time).
+
+## Ask Jarvis (one-time setup)
+Ask Jarvis calls Claude from a Supabase Edge Function, so your API key stays on the server and never reaches the phone.
+1. Create an API key at https://console.anthropic.com (Settings → API keys) and add a little credit under Billing. It is pay-per-use.
+2. Install the Supabase CLI, then:
+   ```bash
+   supabase link --project-ref <your-project-ref>
+   supabase secrets set ANTHROPIC_API_KEY=<your key>
+   supabase functions deploy ask-jarvis
+   ```
+   (Without the CLI: Supabase dashboard → Edge Functions → Deploy a new function named `ask-jarvis`, paste `supabase/functions/ask-jarvis/index.ts`, then add `ANTHROPIC_API_KEY` under Edge Functions → Secrets.)
+3. Open the ✨ Ask tab. Only signed-in users can use it.
+
+Jarvis can open WhatsApp, SMS, email or the dialer with the text ready, but you always tap Send yourself; it cannot operate other apps or phone settings.
 
 ## Structure
 ```

@@ -1,0 +1,70 @@
+/* src/components/AskTab.module.css */
+.wrap { display: flex; flex-direction: column; min-height: calc(100dvh - 220px); }
+
+.intro { padding: 8px 2px 16px; }
+.title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.sub { font-size: 13px; color: var(--text2); margin: 4px 0 16px; line-height: 1.5; }
+.examples { display: flex; flex-direction: column; gap: 8px; }
+.example {
+  text-align: left; padding: 12px 14px; font-size: 13px; line-height: 1.4;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.example:hover { border-color: var(--accent1); }
+
+.thread { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
+.me, .them { max-width: 88%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; }
+.me {
+  align-self: flex-end; background: var(--accent); color: var(--on-accent);
+  border-bottom-right-radius: 6px; white-space: pre-wrap;
+}
+.them {
+  align-self: flex-start; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-bottom-left-radius: 6px;
+}
+.thinking { color: var(--text3); font-style: italic; }
+.err { border-color: var(--missed-soft); background: var(--missed-soft); }
+.text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.tools { display: flex; gap: 4px; margin-top: 6px; }
+.tools button { background: none; color: var(--text3); font-size: 14px; padding: 2px 6px; border-radius: 6px; }
+.tools button:hover { background: var(--surface2); color: var(--text); }
+
+.card {
+  margin-top: 10px; padding: 10px 12px; border-radius: var(--radius);
+  background: var(--surface2); border: 1px solid var(--border);
+}
+.cardTitle { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.taskRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 13px; }
+.taskRow small { color: var(--text3); }
+.draft { font-size: 13px; line-height: 1.5; white-space: pre-wrap; padding: 8px 10px; background: var(--surface); border-radius: var(--radius-sm); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.action, .small {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 7px 12px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  background: var(--surface); color: var(--accent1); border: 1px solid var(--border2);
+}
+a.action { margin-top: 0; }
+.them > a.action { margin-top: 10px; }
+.small { flex-shrink: 0; }
+.small:disabled { color: var(--success); opacity: 1; cursor: default; }
+
+.clear { align-self: center; background: none; color: var(--text3); font-size: 12px; padding: 6px; }
+
+.composer {
+  position: sticky; bottom: 0; margin-top: auto;
+  display: flex; gap: 8px; align-items: flex-end;
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+.input {
+  flex: 1; min-width: 0; resize: none; max-height: 120px;
+  padding: 12px 14px; font-size: 14px; line-height: 1.4;
+  background: var(--surface); color: var(--text);
+  border: 1.5px solid var(--border2); border-radius: 22px; outline: none;
+}
+.input:focus { border-color: var(--accent1); }
+.mic, .send { width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; font-size: 18px; }
+.mic { background: var(--surface); border: 1.5px solid var(--border2); }
+.micOn { border-color: var(--danger); background: var(--missed-soft); }
+.send { background: var(--accent); color: var(--on-accent); font-weight: 800; }
+.send:disabled { opacity: 0.4; cursor: not-allowed; }

@@ -1,18 +1,16 @@
 // src/components/QuickCapture.jsx
 // One box at the top of every tab: speak or type a task in plain words.
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { parseTask } from '../lib/parseTask'
 import { formatDisplay, todayStr } from '../lib/dateUtils'
+import { useVoice } from '../hooks/useVoice'
 import styles from './QuickCapture.module.css'
-
-const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)
 
 export default function QuickCapture({ onAdd }) {
   const [text, setText]           = useState('')
-  const [listening, setListening] = useState(false)
   const [saving, setSaving]       = useState(false)
-  const recRef = useRef(null)
+  const { listening, toggle }     = useVoice(setText)
 
   const preview = text.trim() ? parseTask(text) : null
 
@@ -29,29 +27,7 @@ export default function QuickCapture({ onAdd }) {
       : data.due_date === todayStr() ? 'Added to today' : `Planned for ${formatDisplay(data.due_date)}`)
   }
 
-  const toggleMic = () => {
-    if (!SpeechRecognition) {
-      toast('Voice is not supported in this browser. Use the mic key on your keyboard instead.', { icon: '🎙️', duration: 5000 })
-      return
-    }
-    if (listening) { recRef.current?.stop(); return }
-    const rec = new SpeechRecognition()
-    rec.lang = 'en-IN'
-    rec.interimResults = true
-    const before = text ? text + ' ' : ''
-    rec.onresult = (ev) => {
-      let said = ''
-      for (const r of ev.results) said += r[0].transcript
-      setText(before + said)
-    }
-    rec.onerror = (ev) => {
-      if (ev.error === 'not-allowed') toast.error('Allow microphone access to add tasks by voice')
-    }
-    rec.onend = () => setListening(false)
-    recRef.current = rec
-    rec.start()
-    setListening(true)
-  }
+  const toggleMic = () => toggle(text)
 
   return (
     <form className={styles.wrap} onSubmit={submit}>

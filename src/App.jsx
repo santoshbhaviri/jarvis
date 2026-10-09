@@ -9,6 +9,7 @@ import TabNav        from './components/TabNav'
 import TodayTab      from './components/TodayTab'
 import TrackerTab    from './components/TrackerTab'
 import DoneTab       from './components/DoneTab'
+import AskTab        from './components/AskTab'
 import EditTaskModal from './components/EditTaskModal'
 import InstallBanner from './components/InstallBanner'
 import LoginScreen   from './components/LoginScreen'
@@ -40,12 +41,13 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
       <TabNav active={activeTab} onChange={setActiveTab} />
 
       <main className={styles.main}>
-        <InstallBanner />
+        {activeTab !== 'ask' && <InstallBanner />}
         {taskData.error && <p className={styles.error}>Could not load tasks: {taskData.error}</p>}
         {taskData.loading && !taskData.tasks.length && <p className={styles.loading}>Loading…</p>}
 
         {activeTab === 'today'   && <TodayTab   taskData={taskData} onEdit={setEditing} />}
         {activeTab === 'tracker' && <TrackerTab taskData={taskData} onEdit={setEditing} />}
+        {activeTab === 'ask'     && <AskTab     taskData={taskData} />}
         {activeTab === 'done'    && <DoneTab    taskData={taskData} />}
       </main>
 
