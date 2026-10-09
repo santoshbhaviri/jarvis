@@ -1,6 +1,8 @@
 // src/components/AskTab.jsx
 // Ask Jarvis: speak or type, Claude answers (with web search when needed),
 // and suggestions become buttons: add tasks, send a message, call.
+// Until the ask-jarvis function is set up in Supabase, questions open in the
+// Claude app / claude.ai instead (free with a Claude account, no setup).
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -37,6 +39,16 @@ function dayContext(tasks, isRoutineDone) {
   ].filter(Boolean).join('\n')
 }
 
+// Question plus today's tasks, as one message for the Claude app
+const claudeLink = (q, context) =>
+  `https://claude.ai/new?q=${encodeURIComponent(`${q}\n\n(For context, from my Jarvis task app:\n${context})`)}`
+
+// Is the in-app assistant set up? An empty question gets "empty" back only when it is.
+async function inAppReady() {
+  const { error } = await supabase.functions.invoke('ask-jarvis', { body: { turns: [] } })
+  try { return (await error?.context?.json())?.error === 'empty' } catch { return false }
+}
+
 async function ask(turns, context) {
   const { data, error } = await supabase.functions.invoke('ask-jarvis', { body: { turns, context } })
   if (!error) return data
@@ -58,7 +70,10 @@ export default function AskTab({ taskData }) {
   const [text, setText]       = useState('')
   const [waiting, setWaiting] = useState(false)
   const { listening, toggle } = useVoice(setText)
+  const [mode, setMode]       = useState('checking')   // 'inapp' | 'claude'
   const endRef = useRef(null)
+
+  useEffect(() => { inAppReady().then(ok => setMode(ok ? 'inapp' : 'claude')) }, [])
 
   useEffect(() => { saveHistory(turns) }, [turns])
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [turns, waiting])
@@ -76,6 +91,9 @@ export default function AskTab({ taskData }) {
   }, [text, waiting, turns, tasks, isRoutineDone])
 
   const clear = () => { setTurns([]); window.speechSynthesis?.cancel() }
+
+  if (mode !== 'inapp') return <OpenInClaude text={text} setText={setText} listening={listening} toggle={toggle}
+    context={dayContext(tasks, isRoutineDone)} />
 
   return (
     <div className={styles.wrap}>
@@ -177,6 +195,44 @@ function MessageCard({ m, copy }) {
         <a className={styles.action} href={`https://wa.me/${email ? '' : phone}?text=${body}`} target="_blank" rel="noreferrer">WhatsApp</a>
         <a className={styles.action} href={`sms:${email ? '' : (m.to || '').replace(/[^\d+]/g, '')}?&body=${body}`}>SMS</a>
         <a className={styles.action} href={`mailto:${email}?subject=${encodeURIComponent(m.subject || '')}&body=${body}`}>Email</a>
+      </div>
+    </div>
+  )
+}
+
+// No setup needed: the question (with today's tasks) opens in Claude
+function OpenInClaude({ text, setText, listening, toggle, context }) {
+  const q = text.trim()
+  return (
+    <div className={styles.wrap}>
+      <div className={styles.intro}>
+        <h2 className={styles.title}>Ask Jarvis</h2>
+        <p className={styles.sub}>
+          Speak or type, then tap <b>Ask Claude</b>. Your question opens in the Claude app with today's tasks attached,
+          so you can search, polish a message or plan your day. Free with your Claude account.
+        </p>
+        <div className={styles.examples}>
+          {EXAMPLES.map(e => (
+            <a key={e} className={styles.example} href={claudeLink(e, context)} target="_blank" rel="noreferrer">{e}</a>
+          ))}
+        </div>
+      </div>
+      <div className={styles.composerCol}>
+        <div className={styles.composer}>
+          <textarea
+            className={styles.input} rows={2} value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder={listening ? 'Listening…' : 'Ask or tell Jarvis…'} aria-label="Ask Jarvis"
+          />
+          <button type="button" onClick={() => toggle(text)}
+            className={`${styles.mic} ${listening ? styles.micOn : ''}`}
+            aria-label={listening ? 'Stop listening' : 'Speak'}>🎙️</button>
+        </div>
+        <a className={`${styles.askClaude} ${q ? '' : styles.disabled}`}
+          href={q ? claudeLink(q, context) : undefined} target="_blank" rel="noreferrer"
+          aria-disabled={!q} onClick={() => q && setTimeout(() => setText(''), 500)}>
+          Ask Claude ↗
+        </a>
       </div>
     </div>
   )
