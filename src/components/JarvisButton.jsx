@@ -2,11 +2,13 @@
 // Tap it and speak (or type). Jarvis works out what you meant:
 //   tasks   "On 21st call the DEO and send the survey report" → added on the right days
 //   ask     "Latest news on Rythu Bharosa", "Polish this: …"  → answered (free, via Google / Gemini)
-//   improve "Jarvis should show a weekly summary"              → sent to GitHub; Claude builds it
+//   improve "Jarvis should show a weekly summary"              → sent to Claude, who builds it
+// It learns: corrections and repeated tasks are remembered (see lib/memory.js).
 import { useState, useEffect, useRef, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
-import { supabase } from '../lib/supabase'
+import { askJarvis, isReady, sendRequest } from '../lib/server'
+import { rememberKind, recallKind, usualTasks } from '../lib/memory'
 import { parseCommand } from '../lib/parseTask'
 import { classify, dayContext, googleLink, chatgptLink, claudeLink, improveLink } from '../lib/assistant'
 import { todayStr } from '../lib/dateUtils'
@@ -27,25 +29,15 @@ const dayLabel = (t) => {
   return format(parseISO(t.due_date), 'EEE d MMM')
 }
 
-// Is the in-app assistant switched on? An empty question gets "empty" back only when it is.
-async function inAppReady() {
-  const { error } = await supabase.functions.invoke('ask-jarvis', { body: { turns: [] } })
-  try { return (await error?.context?.json())?.error === 'empty' } catch { return false }
-}
-
-async function askInApp(turns, context) {
-  const { data, error } = await supabase.functions.invoke('ask-jarvis', { body: { turns, context } })
-  if (!error) return data
-  let code = 'failed'
-  try { code = (await error.context.json()).error || code } catch { /* not JSON */ }
-  return { error: code }
-}
-
 const ERRORS = {
   busy: 'Too many questions in a short time. Try again in a minute.',
-  bad_key: 'The AI key in Supabase was not accepted. Check it under Edge Functions → Secrets.',
+  bad_key: 'The Gemini key in Netlify was not accepted. Check GEMINI_API_KEY.',
   not_signed_in: 'Please sign out and sign in again.',
+  offline: 'No internet connection.',
 }
+
+// Your own correction wins, then what Jarvis learned, then its own guess
+const decide = (s, k) => k || recallKind(s) || classify(s)
 
 export default function JarvisButton({ taskData }) {
   const { tasks, addTask, deleteTask, isRoutineDone } = taskData
@@ -54,14 +46,19 @@ export default function JarvisButton({ taskData }) {
   const [kind, setKind]       = useState(null)      // chosen by hand; null = Jarvis decides
   const [turns, setTurns]     = useState([])        // in-app answers while the sheet is open
   const [waiting, setWaiting] = useState(false)
-  const [inApp, setInApp]     = useState(false)
+  const [inApp, setInApp]     = useState(false)      // Gemini key added in Netlify
+  const [direct, setDirect]   = useState(false)      // GitHub key added: requests go straight from the app
   const openRef  = useRef(false)
   const inputRef = useRef(null)
 
-  useEffect(() => { inAppReady().then(setInApp) }, [])
+  useEffect(() => {
+    isReady('jarvis-ask').then(setInApp)
+    isReady('jarvis-github').then(setDirect)
+  }, [])
 
   const q = text.trim()
-  const guess = kind || (q ? classify(q) : 'task')
+  const guess = q ? decide(q, kind) : 'task'
+  const usual = q ? [] : usualTasks(tasks)
   const preview = guess === 'task' && q ? parseCommand(q) : []
 
   const addAll = useCallback(async (said) => {
@@ -86,22 +83,33 @@ export default function JarvisButton({ taskData }) {
   const ask = useCallback(async (said) => {
     const next = [...turns, { role: 'user', text: said }]
     setTurns(next); setText(''); setKind(null); setWaiting(true)
-    const res = await askInApp(next.filter(t => !t.error).map(({ role, text }) => ({ role, text })), dayContext(tasks, isRoutineDone))
+    const res = await askJarvis(next.filter(t => !t.error).map(({ role, text }) => ({ role, text })), dayContext(tasks, isRoutineDone))
     setWaiting(false)
     setTurns(prev => [...prev, res.error
       ? { role: 'assistant', text: ERRORS[res.error] || 'Something went wrong. Please try again.', error: true }
       : { role: 'assistant', text: res.text, actions: res.actions }])
   }, [turns, tasks, isRoutineDone])
 
+  const request = useCallback(async (said) => {
+    setWaiting(true)
+    const res = await sendRequest(said)
+    setWaiting(false)
+    if (res.error) { toast.error('Could not send. Try again.'); return }
+    toast.success('Sent. Claude builds it and it shows up under Updates to try.', { duration: 5000 })
+    close()
+  }, [])   // eslint-disable-line react-hooks/exhaustive-deps
+
   // Do it straight away when that needs no extra tap
   const go = useCallback((said = text, k = null) => {
     const s = said.trim()
     if (!s || !openRef.current) return
-    const what = k || kind || classify(s)
+    if (kind) rememberKind(s, kind)   // learn from your corrections
+    const what = decide(s, k || kind)
     if (what === 'task') addAll(s)
     else if (what === 'ask' && inApp) ask(s)
-    // free answers and app requests open another app, which needs your tap
-  }, [text, kind, inApp, addAll, ask])
+    else if (what === 'improve' && direct) request(s)
+    // otherwise it opens another app, which needs your tap
+  }, [text, kind, inApp, direct, addAll, ask, request])
 
   const voice = useVoice(setText, useCallback((said) => go(said), [go]))
 
@@ -160,6 +168,12 @@ export default function JarvisButton({ taskData }) {
               )}
             </form>
 
+            {usual.length > 0 && turns.length === 0 && (
+              <div className={styles.usual}>
+                {usual.map(t => <button key={t} className={styles.kind} onClick={() => { openRef.current = true; addAll(t) }}>+ {t}</button>)}
+              </div>
+            )}
+
             {q && (
               <div className={styles.kinds} role="radiogroup" aria-label="What should Jarvis do">
                 {KINDS.map(k => (
@@ -202,7 +216,10 @@ export default function JarvisButton({ taskData }) {
                 </>
               ))}
 
-            {q && guess === 'improve' && (
+            {q && guess === 'improve' && direct && (
+              <button className={styles.primary} onClick={() => go(text, 'improve')} disabled={waiting}>Send to Claude</button>
+            )}
+            {q && guess === 'improve' && !direct && (
               <>
                 <a className={styles.primary} href={improveLink(q)} target="_blank" rel="noreferrer" onClick={clearSoon}>Send to GitHub ↗</a>
                 <div className={styles.alt}>

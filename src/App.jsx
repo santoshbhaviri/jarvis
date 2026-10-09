@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth }      from './hooks/useAuth'
 import { useTasks }     from './hooks/useTasks'
 import { useTheme }     from './hooks/useTheme'
@@ -10,6 +10,8 @@ import TodayTab      from './components/TodayTab'
 import TrackerTab    from './components/TrackerTab'
 import DoneTab       from './components/DoneTab'
 import JarvisButton  from './components/JarvisButton'
+import Updates       from './components/Updates'
+import { isReady, listUpdates } from './lib/server'
 import EditTaskModal from './components/EditTaskModal'
 import InstallBanner from './components/InstallBanner'
 import LoginScreen   from './components/LoginScreen'
@@ -28,6 +30,16 @@ export default function App() {
 function Workspace({ isDark, onToggleTheme, onSignOut }) {
   const [activeTab, setActiveTab] = useState('today')
   const [editing, setEditing]     = useState(null)
+  const [updates, setUpdates]     = useState(null)    // changes Claude built, waiting for you
+  const [showUpdates, setShowUpdates] = useState(false)
+
+  const loadUpdates = useCallback(async () => {
+    if (!(await isReady('jarvis-github'))) return
+    const res = await listUpdates()
+    if (!res.error) setUpdates(res)
+  }, [])
+  useEffect(() => { loadUpdates() }, [loadUpdates])
+  const waiting = updates?.updates?.length || 0
 
   const taskData  = useTasks()
   const reminders = useReminders(taskData.tasks, taskData.loading)
@@ -37,7 +49,8 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
 
   return (
     <div className={styles.app}>
-      <Header isDark={isDark} onToggleTheme={onToggleTheme} reminders={reminders} onSignOut={onSignOut} />
+      <Header isDark={isDark} onToggleTheme={onToggleTheme} reminders={reminders} onSignOut={onSignOut}
+        updates={updates ? waiting : null} onUpdates={() => { setShowUpdates(true); loadUpdates() }} />
       <TabNav active={activeTab} onChange={setActiveTab} />
 
       <main className={styles.main}>
@@ -51,6 +64,7 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
       </main>
 
       <JarvisButton taskData={taskData} />
+      {showUpdates && <Updates data={updates} onClose={() => setShowUpdates(false)} onChanged={loadUpdates} />}
 
       {editingTask && (
         <EditTaskModal

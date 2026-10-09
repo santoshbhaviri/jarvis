@@ -90,3 +90,4 @@
 }
 .them > a.small { margin-top: 10px; }
 .small:disabled { color: var(--done); }
+.usual { display: flex; flex-wrap: wrap; gap: 6px; }
