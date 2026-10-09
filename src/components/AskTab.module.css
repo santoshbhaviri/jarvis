@@ -81,3 +81,21 @@ a.action { margin-top: 0; }
   background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 15px;
 }
 .disabled { opacity: 0.4; pointer-events: none; }
+
+.improve {
+  display: flex; flex-direction: column; gap: 4px; width: 100%; margin-top: 16px;
+  text-align: left; padding: 14px; border-radius: var(--radius-lg);
+  background: var(--accent-soft); color: var(--text); border: 1px dashed var(--accent1);
+}
+.improve strong { font-size: 14px; }
+.improve span { font-size: 12px; color: var(--text2); line-height: 1.45; }
+.improveOpen {
+  margin-top: 16px; padding: 14px; border-radius: var(--radius-lg);
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.improveOpen strong { font-size: 14px; }
+.improveRow { display: flex; gap: 8px; align-items: flex-end; }
+.improveRow .input { border-radius: var(--radius-lg); }
+.improveNote { font-size: 11.5px; color: var(--text3); line-height: 1.5; }
+.improveNote a { color: var(--accent1); font-weight: 600; }

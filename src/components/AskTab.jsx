@@ -9,6 +9,7 @@ import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { todayStr, formatDisplay } from '../lib/dateUtils'
 import { useVoice } from '../hooks/useVoice'
+import { REPO_URL } from '../lib/constants'
 import styles from './AskTab.module.css'
 
 const HISTORY_KEY = 'jarvis-ask-history'
@@ -104,6 +105,7 @@ export default function AskTab({ taskData }) {
           <div className={styles.examples}>
             {EXAMPLES.map(e => <button key={e} className={styles.example} onClick={() => send(e)}>{e}</button>)}
           </div>
+          <ImproveCard />
         </div>
       ) : (
         <div className={styles.thread}>
@@ -216,6 +218,7 @@ function OpenInClaude({ text, setText, listening, toggle, context }) {
             <a key={e} className={styles.example} href={claudeLink(e, context)} target="_blank" rel="noreferrer">{e}</a>
           ))}
         </div>
+        <ImproveCard />
       </div>
       <div className={styles.composerCol}>
         <div className={styles.composer}>
@@ -234,6 +237,44 @@ function OpenInClaude({ text, setText, listening, toggle, context }) {
           Ask Claude ↗
         </a>
       </div>
+    </div>
+  )
+}
+
+// Ask for a change to Jarvis itself. It opens a GitHub issue, already filled in;
+// Claude picks up new requests every day, builds them and sends a change to approve.
+function ImproveCard() {
+  const [open, setOpen] = useState(false)
+  const [idea, setIdea] = useState('')
+  const { listening, toggle } = useVoice(setIdea)
+  const q = idea.trim()
+  const title = q.length > 70 ? q.slice(0, 67) + '…' : q
+  const body = `${q}\n\n---\nSent from the Improve Jarvis button. Claude: please build this, open a pull request with a preview link, and comment here.`
+  const href = `${REPO_URL}/issues/new?title=${encodeURIComponent('[Jarvis] ' + title)}&body=${encodeURIComponent(body)}`
+
+  if (!open) return (
+    <button className={styles.improve} onClick={() => setOpen(true)}>
+      <strong>💡 Improve Jarvis</strong>
+      <span>Ask for a new feature or report a problem. Claude builds it and you approve.</span>
+    </button>
+  )
+  return (
+    <div className={styles.improveOpen}>
+      <strong>What should Jarvis do differently?</strong>
+      <div className={styles.improveRow}>
+        <textarea className={styles.input} rows={3} value={idea} onChange={e => setIdea(e.target.value)}
+          placeholder={listening ? 'Listening…' : 'e.g. Remind me at 6 pm about anything not done'} aria-label="Improvement request" />
+        <button type="button" onClick={() => toggle(idea)} className={`${styles.mic} ${listening ? styles.micOn : ''}`}
+          aria-label={listening ? 'Stop listening' : 'Speak'}>🎙️</button>
+      </div>
+      <a className={`${styles.askClaude} ${q ? '' : styles.disabled}`} href={q ? href : undefined}
+        target="_blank" rel="noreferrer" onClick={() => q && setTimeout(() => { setIdea(''); setOpen(false) }, 500)}>
+        Send request ↗
+      </a>
+      <p className={styles.improveNote}>
+        GitHub opens with your request filled in. Tap <b>Create</b> (or <b>Submit new issue</b>). Claude checks new requests every morning
+        and sends you a change to try before anything goes live. <a href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">See my requests</a>
+      </p>
     </div>
   )
 }
