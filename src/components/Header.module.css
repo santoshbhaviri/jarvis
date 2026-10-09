@@ -80,3 +80,13 @@
   .themeLabel { display: none; }
   .date       { display: none; }
 }
+
+/* Reminder bell + sign out */
+.iconBtn {
+  width: 30px; height: 30px; border-radius: 99px; flex-shrink: 0;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9); font-size: 14px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.iconBtn:hover { background: rgba(255,255,255,0.18); }
+@media (max-width: 420px) { .themeLabel, .date { display: none; } .right { gap: 6px; } }

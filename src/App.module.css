@@ -7,3 +7,7 @@
   padding: 16px 14px 100px;
 }
 @media(min-width:640px){ .main{ padding:24px 24px 80px; } }
+.error {
+  font-size: 12px; color: var(--danger); margin-bottom: 12px;
+  padding: 8px 12px; border-radius: var(--radius); background: rgba(239,68,68,0.1);
+}

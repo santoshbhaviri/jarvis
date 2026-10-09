@@ -5,12 +5,13 @@ import TaskCard      from './TaskCard'
 import styles        from './TabShared.module.css'
 
 export default function MissionTab({ catFilter, taskData }) {
-  const { tasks, isCompletedToday, toggleDailyComplete, updateNotes, extendTask } = taskData
+  const { tasks, isCompletedToday, isFinishedEarlier, toggleDailyComplete, updateNotes, extendTask } = taskData
 
   const missionTasks = useMemo(() => {
     return tasks
       .filter(t =>
         t.status === 'mission' &&
+      !isFinishedEarlier(t) &&
         (catFilter === 'all' || t.category === catFilter)
       )
       .slice()  // don't mutate original array
@@ -21,7 +22,7 @@ export default function MissionTab({ catFilter, taskData }) {
         if (!b.due_date) return -1
         return a.due_date.localeCompare(b.due_date)
       })
-  }, [tasks, catFilter])
+  }, [tasks, catFilter, isFinishedEarlier])
 
   const pending   = missionTasks.filter(t => !isCompletedToday(t.id))
   const completed = missionTasks.filter(t =>  isCompletedToday(t.id))

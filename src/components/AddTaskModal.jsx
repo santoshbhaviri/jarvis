@@ -1,7 +1,9 @@
 // src/components/AddTaskModal.jsx
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { format, addDays } from 'date-fns'
 import { EMPTY_FORM } from '../lib/constants'
+import TaskExtraFields from './TaskExtraFields'
 import styles from './AddTaskModal.module.css'
 
 const makeRow = () => ({ ...EMPTY_FORM, _id: Math.random() })
@@ -68,6 +70,10 @@ export default function AddTaskModal({ onClose, onSave, onSaveBulk }) {
       status:   row.status,
       due_date: needsDue(row.status) ? (row.due_date || null) : null,
       notes:    row.notes.trim() || null,
+      important:  row.important,
+      urgent:     row.urgent,
+      waiting_on: row.waiting_on.trim(),
+      follow_up:  row.waiting_on.trim() ? (row.follow_up || format(addDays(new Date(), 2), 'yyyy-MM-dd')) : null,
     }))
 
     let saveError = null
@@ -206,6 +212,8 @@ function TaskRow({ row, idx, errors, total, onChange, onRemove }) {
           {errors.status && <span className={styles.err}>{errors.status}</span>}
         </div>
       </div>
+
+      <TaskExtraFields row={row} onChange={onChange} />
 
       {/* Due date + Notes */}
       <div className={styles.rowLine3}>

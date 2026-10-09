@@ -1,8 +1,9 @@
 // src/components/TaskCard.jsx
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { CATEGORIES, STATUSES } from '../lib/constants'
-import { formatDisplay, dueBadge } from '../lib/dateUtils'
+import { CATEGORIES, STATUSES, QUADRANTS, quadrantOf } from '../lib/constants'
+import { formatDisplay, dueBadge, todayStr } from '../lib/dateUtils'
+import { useTaskActions } from '../lib/taskActions'
 import styles from './TaskCard.module.css'
 
 export default function TaskCard({
@@ -20,6 +21,7 @@ export default function TaskCard({
   const [showExtendInput, setShowExtendInput] = useState(false)
   const [extendDate, setExtendDate]           = useState('')
   const [saving, setSaving]                   = useState(false)
+  const { toggleFocus, markChased, openEdit } = useTaskActions()
 
   // Sync textarea when task.notes changes externally
   useEffect(() => {
@@ -29,6 +31,10 @@ export default function TaskCard({
   const cat = CATEGORIES[task.category]
   const st  = STATUSES[task.status]
   const db  = dueBadge(task.due_date)
+  const q   = quadrantOf(task)
+  const today     = todayStr()
+  const isFocus   = task.focus_date === today
+  const chaseDue  = task.waiting_on && task.follow_up && task.follow_up <= today && !completed
 
   const handleSaveNotes = async () => {
     setSaving(true)
@@ -83,6 +89,7 @@ export default function TaskCard({
             {task.is_unfinished && <span className={styles.unfinishedTag}>Unfinished</span>}
             {task.is_extended   && !task.is_unfinished && <span className={styles.extTag}>Extended</span>}
             {scheduled          && <span className={styles.scheduledTag}>Scheduled</span>}
+            {isFocus            && <span className={styles.focusTag}>★ Focus</span>}
           </div>
 
           <div className={styles.badges}>
@@ -92,6 +99,19 @@ export default function TaskCard({
             <span className={styles.stBadge} style={{ background: st.bg, color: st.color }}>
               {st.label}
             </span>
+            {q !== 4 && (
+              <span className={styles.prioBadge} style={{ color: QUADRANTS[q].color, borderColor: QUADRANTS[q].color }}>
+                {q === 1 ? 'Important · Urgent' : q === 2 ? 'Important' : 'Urgent'}
+              </span>
+            )}
+            {task.waiting_on && (
+              <span className={`${styles.waitBadge} ${chaseDue ? styles.waitDue : ''}`}>
+                👤 {task.waiting_on}{task.follow_up ? ` · ${formatDisplay(task.follow_up)}` : ''}
+              </span>
+            )}
+            {task.postponed >= 2 && !completed && (
+              <span className={styles.postBadge}>Postponed {task.postponed}×</span>
+            )}
             {showDueDate && task.due_date && (
               <span
                 className={styles.dueDateBadge}
@@ -115,6 +135,24 @@ export default function TaskCard({
 
         {/* Action buttons */}
         <div className={styles.actions}>
+          {toggleFocus && !completed && (
+            <button
+              className={`${styles.iconBtn} ${isFocus ? styles.iconBtnActive : ''}`}
+              title={isFocus ? "Remove from today's Top 3" : "Add to today's Top 3"}
+              aria-pressed={isFocus}
+              onClick={() => toggleFocus(task)}
+            >{isFocus ? '★' : '☆'}</button>
+          )}
+          {chaseDue && markChased && (
+            <button
+              className={styles.iconBtn}
+              title="I followed up. Remind me again in 2 days"
+              onClick={async () => { const { error } = await markChased(task); if (!error) toast.success('Next follow-up in 2 days') }}
+            >📞</button>
+          )}
+          {openEdit && (
+            <button className={styles.iconBtn} title="Edit task" onClick={() => openEdit(task)}>⚙︎</button>
+          )}
           <button
             className={`${styles.iconBtn} ${editingNotes ? styles.iconBtnActive : ''}`}
             title="Edit notes"

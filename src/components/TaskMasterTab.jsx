@@ -80,6 +80,7 @@ function MasterRow({ task, onDelete }) {
         <div className={styles.rowTitle}>
           {task.title}
           {task.is_extended && <span className={styles.extTag}>Extended</span>}
+          {task.completed_at && <span className={styles.extTag}>Finished {formatDisplay(task.completed_at.slice(0, 10))}</span>}
         </div>
         <div className={styles.rowMeta}>
           <span className={styles.badge} style={{ background: cat.bg, color: cat.color }}>

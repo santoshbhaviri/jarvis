@@ -6,14 +6,15 @@ import TaskCard      from './TaskCard'
 import styles        from './ScutWorkTab.module.css'
 
 export default function ScutWorkTab({ catFilter, taskData }) {
-  const { tasks, isCompletedToday, toggleDailyComplete, updateNotes, extendTask } = taskData
+  const { tasks, isCompletedToday, isFinishedEarlier, toggleDailyComplete, updateNotes, extendTask } = taskData
   const today = todayStr()
 
   const scutTasks = useMemo(() =>
     tasks.filter(t =>
       t.status === 'scut-work' &&
+      !isFinishedEarlier(t) &&
       (catFilter === 'all' || t.category === catFilter)
-    ), [tasks, catFilter])
+    ), [tasks, catFilter, isFinishedEarlier])
 
   // Pending: not completed AND (no due_date OR due_date <= today)
   // Unfinished tasks (auto-rolled over from previous days) sorted to TOP
