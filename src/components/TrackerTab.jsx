@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO, startOfWeek, addDays } from 'date-fns'
+import { Check, CalendarDays, ChevronUp, Settings2, Plus } from 'lucide-react'
 import { getAllMonthDates, getMonthStartDow, todayStr } from '../lib/dateUtils'
 import styles from './HabitCard.module.css'
 import own    from './TrackerTab.module.css'
@@ -47,19 +48,16 @@ export default function TrackerTab({ taskData, onEdit }) {
     <div>
       <form className={own.addForm} onSubmit={add}>
         <input className={own.input} value={title} onChange={e => setTitle(e.target.value)}
-          placeholder="New habit, e.g. Gym" aria-label="New habit" />
+          placeholder="New habit" aria-label="New habit" />
         <select className={own.select} value={target} onChange={e => setTarget(e.target.value)} aria-label="Goal per week">
           <option value="">Every day</option>
           {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}× a week</option>)}
         </select>
-        <button className={own.addBtn} disabled={!title.trim() || saving}>Add</button>
+        <button className={own.addBtn} disabled={!title.trim() || saving} aria-label="Add habit"><Plus size={20} /></button>
       </form>
 
       {habits.length === 0 && (
-        <div className={own.empty}>
-          <p><b>Track what you want to do regularly.</b></p>
-          <p>Add a habit like Gym (4× a week) or Morning walk (every day). Tick it each day you do it, and see how many days you managed this week and this month.</p>
-        </div>
+        <div className={own.empty}><p>Add a habit, like Gym 4× a week.</p></div>
       )}
 
       <div className={styles.list}>
@@ -97,26 +95,26 @@ function HabitCard({ task, today, weekDates, allMonthDates, monthStartDow, isDon
           className={`${own.bigCheck} ${doneToday ? own.bigChecked : ''}`}
           onClick={() => onToggle(today)}
           aria-label={doneToday ? `Undo ${task.title} for today` : `Mark ${task.title} done today`}
-        >{doneToday ? '✓' : ''}</button>
+        >{doneToday && <Check size={18} />}</button>
 
         <div className={styles.cardInfo}>
           <span className={styles.cardTitle}>{task.title}</span>
-          <span className={own.goal}>{task.target_per_week ? `Goal: ${task.target_per_week}× a week` : 'Goal: every day'}</span>
+          <span className={own.goal}>{task.target_per_week ? `${task.target_per_week}× a week` : 'Every day'}</span>
         </div>
 
         <div className={styles.topActions}>
           <button className={`${styles.calBtn} ${showCalendar ? styles.calBtnActive : ''}`}
             onClick={() => setShowCalendar(s => !s)} title={showCalendar ? 'Hide month' : 'Show month'}>
-            {showCalendar ? '▲' : '📅'}
+            {showCalendar ? <ChevronUp size={17} /> : <CalendarDays size={17} />}
           </button>
-          <button className={styles.editBtn} onClick={onEdit} title="Edit or delete habit">⚙︎</button>
+          <button className={styles.editBtn} onClick={onEdit} title="Edit or delete habit" aria-label="Edit or delete habit"><Settings2 size={17} /></button>
         </div>
       </div>
 
       <div className={own.stats}>
         <div className={`${own.stat} ${onTrack ? own.statGood : ''}`}>
           <span className={own.statN}>{weekDone}<small>/{weekGoal}</small></span>
-          <span className={own.statL}>this week{onTrack ? ' ✓' : ''}</span>
+          <span className={own.statL}>this week{onTrack && <Check size={12} />}</span>
         </div>
         <div className={own.stat}>
           <span className={own.statN}>{monthDone}<small>/{monthGoal}</small></span>
@@ -133,7 +131,7 @@ function HabitCard({ task, today, weekDates, allMonthDates, monthStartDow, isDon
               className={[own.day, done && own.dayDone, date === today && own.dayToday, future && own.dayFuture].filter(Boolean).join(' ')}
               aria-pressed={done} aria-label={`${format(parseISO(date), 'EEEE d MMM')}${done ? ', done' : ''}`}>
               <span className={own.dayName}>{format(parseISO(date), 'EEEEE')}</span>
-              <span className={own.dayMark}>{done ? '✓' : format(parseISO(date), 'd')}</span>
+              <span className={own.dayMark}>{done ? <Check size={14} /> : format(parseISO(date), 'd')}</span>
             </button>
           )
         })}
@@ -141,7 +139,7 @@ function HabitCard({ task, today, weekDates, allMonthDates, monthStartDow, isDon
 
       {showCalendar && (
         <div className={styles.calendarWrap}>
-          <div className={styles.calendarLabel}>{format(new Date(), 'MMMM yyyy')} · tap a day to change it</div>
+          <div className={styles.calendarLabel}>{format(new Date(), 'MMMM yyyy')}</div>
           <div className={styles.calendarHeader}>
             {DOW_LABELS.map(d => <span key={d} className={styles.dowLabel}>{d}</span>)}
           </div>

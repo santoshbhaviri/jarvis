@@ -1,0 +1,28 @@
+.box {
+  display: flex; align-items: flex-end; gap: 4px;
+  padding: 6px 6px 6px 16px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 26px; box-shadow: var(--shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.box:focus-within, .listening { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-soft), var(--shadow); }
+.input {
+  flex: 1; min-width: 0; resize: none; align-self: center;
+  padding: 9px 0; font-size: 16px; line-height: 1.4; letter-spacing: -0.01em;
+  background: none; color: var(--text); border: 0; outline: none;
+}
+.input::placeholder { color: var(--text3); }
+.mic, .send {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.mic { background: none; color: var(--text2); }
+.mic:hover { color: var(--text); }
+.micOn { background: var(--gold-soft); color: var(--gold); animation: pulse 1.4s infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 7px var(--gold-soft); } }
+@media (prefers-reduced-motion: reduce) { .micOn { animation: none; } }
+.send { background: var(--accent); color: var(--on-accent); }
+.send:active:not(:disabled) { transform: scale(0.94); }
+.send:disabled { background: var(--surface2); color: var(--text3); }
+.send svg { stroke-width: 2.2; }
