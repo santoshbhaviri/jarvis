@@ -13,6 +13,9 @@ const TASK = /\b(?:remind me|add (?:a |new )?(?:task|reminder)|(?:i|we) (?:need|
 
 export function classify(text) {
   const s = text.trim()
+  // Say the kind first to be sure: "Task: …", "Search: …" / "Ask: …", "Improve: …"
+  if (/^(?:task|todo|to-do|remind(?:er)?)\s*[:,-]/i.test(s)) return 'task'
+  if (/^(?:ask|search|google|question)\s*[:,-]/i.test(s)) return 'ask'
   if (IMPROVE.test(s)) return 'improve'
   if (TASK.test(s) && !/\?\s*$/.test(s)) return 'task'
   if (ASK.test(s)) return 'ask'

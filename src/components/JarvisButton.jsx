@@ -111,17 +111,26 @@ export default function JarvisButton({ taskData }) {
     // otherwise it opens another app, which needs your tap
   }, [text, kind, inApp, direct, addAll, ask, request])
 
-  const voice = useVoice(setText, useCallback((said) => go(said), [go]))
+  // Typing: the keyboard only opens from a tap, so a hidden box takes the focus on the tap
+  // and hands it to the real box once the sheet is drawn (this keeps the iPhone keyboard up)
+  const proxyRef = useRef(null)
+  const typeNow = useCallback(() => {
+    savedMode('type')
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }, [])
+  const voice = useVoice(setText, useCallback((said) => go(said), [go]), typeNow)
 
   const start = () => {
     openRef.current = true
     setOpen(true)
-    if (voiceSupported) voice.toggle('')
-    else setTimeout(() => inputRef.current?.focus(), 0)   // iPhone keyboard has its own 🎙
+    if (voiceSupported && savedMode() !== 'type') voice.toggle('')
+    else { proxyRef.current?.focus(); typeNow() }
   }
+  const switchToTyping = () => { voice.cancel(); savedMode('type'); inputRef.current?.focus() }
+  const speak = () => { savedMode('voice'); voice.toggle(text) }
   function close() {
     openRef.current = false
-    if (voice.listening) voice.toggle()
+    voice.cancel()
     setOpen(false); setText(''); setKind(null); setTurns([])
     window.speechSynthesis?.cancel()
   }
@@ -131,9 +140,10 @@ export default function JarvisButton({ taskData }) {
 
   return (
     <>
+      <input ref={proxyRef} className={styles.proxy} aria-hidden="true" tabIndex={-1} />
       {!open && (
         <button className={styles.fab} onClick={start} aria-label="Talk to Jarvis">
-          <MicIcon />
+          <BoltIcon />
         </button>
       )}
 
@@ -159,14 +169,18 @@ export default function JarvisButton({ taskData }) {
             <form className={styles.row} onSubmit={e => { e.preventDefault(); go() }}>
               <textarea ref={inputRef} className={styles.input} rows={2} value={text}
                 onChange={e => setText(e.target.value)}
+                onFocus={() => voice.listening && switchToTyping()}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go() } }}
-                placeholder={voice.listening ? 'Listening…' : 'Say or type anything'} aria-label="Tell Jarvis" />
+                placeholder={voice.listening ? 'Listening… speak now' : 'Type here, or tap the mic to speak'} aria-label="Tell Jarvis" />
               {voiceSupported && (
-                <button type="button" onClick={() => voice.toggle(text)}
+                <button type="button" onClick={speak}
                   className={`${styles.mic} ${voice.listening ? styles.micOn : ''}`}
                   aria-label={voice.listening ? 'Stop listening' : 'Speak'}><MicIcon /></button>
               )}
             </form>
+            {voice.listening && (
+              <button className={styles.typeInstead} onClick={switchToTyping}>⌨️ Type instead</button>
+            )}
 
             {usual.length > 0 && turns.length === 0 && (
               <div className={styles.usual}>
@@ -232,6 +246,22 @@ export default function JarvisButton({ taskData }) {
         </div>
       )}
     </>
+  )
+}
+
+// Remembers whether you last spoke or typed, and opens the same way next time
+function savedMode(set) {
+  try {
+    if (set) localStorage.setItem('jarvis-input', set)
+    return localStorage.getItem('jarvis-input') || 'voice'
+  } catch { return 'voice' }
+}
+
+function BoltIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="currentColor">
+      <path d="M13.2 2.5 5.6 13.1c-.3.4 0 1 .5 1h4.6l-1.4 7.1c-.1.6.6.9 1 .4l7.6-10.6c.3-.4 0-1-.5-1h-4.6l1.4-7.1c.1-.6-.6-.9-1-.4Z" />
+    </svg>
   )
 }
 

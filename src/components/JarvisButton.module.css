@@ -91,3 +91,8 @@
 .them > a.small { margin-top: 10px; }
 .small:disabled { color: var(--done); }
 .usual { display: flex; flex-wrap: wrap; gap: 6px; }
+.proxy { position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; opacity: 0; font-size: 16px; border: 0; padding: 0; pointer-events: none; }
+.typeInstead {
+  align-self: center; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border2); border-radius: 99px; padding: 8px 18px; font-size: 14px; font-weight: 600;
+}

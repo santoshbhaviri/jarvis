@@ -119,7 +119,7 @@ const FOLLOW = /\b(?:waiting (?:for|on)|awaiting|await|follow ?up (?:with|on)|ch
 const NUMBERS = { a: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, ten: 10 }
 
 // "Jarvis, please remind me to call DEO" → "call DEO"
-const FILLER = /^(?:(?:hey |ok |okay )?jarvis\b[,.]?\s*)?(?:please\s+)?(?:(?:i|we) (?:need|want|have|got|would like) to(?: do)?|i should|i must|i will|i'll|remind me to|remember to|don't forget to|(?:add|create|make)(?: a| new)? (?:task|reminder|todo|to-do)(?: to| for)?|(?:add|create)(?=\s))\s*[:,-]?\s*/i
+const FILLER = /^(?:(?:hey |ok |okay )?jarvis\b[,.]?\s*)?(?:please\s+)?(?:(?:task|todo|to-do|reminder)\s*[:,-]|(?:i|we) (?:need|want|have|got|would like) to(?: do)?|i should|i must|i will|i'll|remind me to|remember to|don't forget to|(?:add|create|make)(?: a| new)? (?:task|reminder|todo|to-do)(?: to| for)?|(?:add|create)(?=\s))\s*[:,-]?\s*/i
 function stripFiller(t) {
   let prev
   do { prev = t; t = t.replace(FILLER, '').trim() } while (t !== prev)
