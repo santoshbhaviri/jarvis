@@ -1,0 +1,9 @@
+.mark {
+  display: inline-grid; place-items: center; flex-shrink: 0;
+  border-radius: 28%;
+  background: linear-gradient(150deg, #24345c 0%, #121a30 100%);
+  box-shadow: inset 0 0 0 1px rgba(216,185,118,0.35), 0 2px 6px rgba(10,13,22,0.25);
+  color: #d8b976;
+  font-family: var(--font-serif); font-weight: 400; line-height: 1;
+  padding-top: 0.06em;
+}

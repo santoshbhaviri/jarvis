@@ -4,6 +4,7 @@
 // Hidden once installed, or after ×.
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { X } from 'lucide-react'
 import styles from './InstallBanner.module.css'
 
 const DISMISS_KEY = 'jarvis-install-dismissed'
@@ -63,7 +64,7 @@ export default function InstallBanner() {
         <img src="/icon-192.png" alt="" className={styles.icon} />
         <strong className={styles.title}>Add Jarvis to your Home Screen</strong>
         <button className={styles.install} onClick={install}>{prompt ? 'Install' : steps ? 'Hide' : 'Show me'}</button>
-        <button className={styles.close} onClick={dismiss} aria-label="Not now">×</button>
+        <button className={styles.close} onClick={dismiss} aria-label="Not now"><X size={18} /></button>
       </div>
 
       {steps && ios && isSafari() && (

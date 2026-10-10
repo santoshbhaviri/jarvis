@@ -2,86 +2,29 @@
 .header {
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
-  backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
   position: sticky; top: 0; z-index: 50;
+  padding-top: env(safe-area-inset-top);
   transition: background 0.25s;
 }
-
 .inner {
   max-width: 760px; margin: 0 auto;
-  padding: 12px 16px;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 10px;
+  padding: 10px 16px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-
 .brand { display: flex; align-items: center; gap: 10px; }
-.logo  { font-size: 24px;  }
-.name  {
-  font-family: var(--font-display);
-  font-size: 20px; font-weight: 800; letter-spacing: 1.5px;
+.name {
+  font-family: var(--font-serif);
+  font-size: 27px; font-weight: 400; letter-spacing: 0.01em; line-height: 1;
   color: var(--text);
 }
-
-/* Right side wrapper */
-.right {
-  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-}
-.date { font-size: 11px; color: var(--text3); font-weight: 500; white-space: nowrap; }
-
-/* Theme toggle button */
-.themeToggle {
-  display: flex; align-items: center; gap: 6px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 99px;
-  padding: 5px 10px 5px 8px;
-  color: var(--text2);
-  font-size: 11px; font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  white-space: nowrap;
-}
-.themeToggle:hover { border-color: var(--border2); }
-
-.themeIcon  { font-size: 13px; line-height: 1; }
-.themeLabel { font-size: 11px; }
-
-/* Toggle track (the pill switch) */
-.track {
-  display: inline-flex; align-items: center;
-  width: 28px; height: 16px;
-  background: var(--border2);
-  border-radius: 99px; padding: 2px;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-.trackOn { background: var(--done); }
-
-.thumb {
-  width: 12px; height: 12px; border-radius: 50%;
-  background: #fff;
-  transition: transform 0.2s;
-  display: block;
-}
-.trackOn .thumb { transform: translateX(12px); }
-
-@media (min-width: 640px) {
-  .inner { padding: 14px 24px; }
-  .name  { font-size: 24px; }
-}
-
-/* Hide label on very small screens */
-@media (max-width: 360px) {
-  .themeLabel { display: none; }
-  .date       { display: none; }
-}
-
-/* Reminder bell + sign out */
+.right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .iconBtn {
-  width: 30px; height: 30px; border-radius: 99px; flex-shrink: 0;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text2); font-size: 14px; line-height: 1;
-  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: transparent; color: var(--text2);
+  display: grid; place-items: center;
+  transition: background 0.2s, color 0.2s;
 }
-.iconBtn:hover { border-color: var(--border2); }
-@media (max-width: 420px) { .themeLabel, .date { display: none; } .right { gap: 6px; } }
+.iconBtn:hover, .iconBtn:active { background: var(--surface2); color: var(--text); }
+@media (min-width: 640px) { .inner { padding: 10px 24px; } }

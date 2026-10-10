@@ -1,17 +1,22 @@
 /* src/components/TrackerTab.module.css */
-.addForm { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-.input, .select {
-  padding: 11px 12px; background: var(--surface); border: 1.5px solid var(--border2);
-  border-radius: var(--radius-lg); color: var(--text); font-size: 14px; outline: none;
+.addForm {
+  display: flex; align-items: center; gap: 4px; margin-bottom: 18px;
+  padding: 6px 6px 6px 16px; background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 26px; box-shadow: var(--shadow);
 }
-.input  { flex: 1 1 160px; min-width: 0; }
-.select { flex: 0 0 auto; }
-.input:focus, .select:focus { border-color: var(--accent1); }
+.addForm:focus-within { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-soft), var(--shadow); }
+.input, .select { background: none; border: 0; color: var(--text); outline: none; }
+.input  { flex: 1 1 auto; min-width: 0; padding: 9px 0; font-size: 16px; }
+.input::placeholder { color: var(--text3); }
+.select {
+  flex: 0 0 auto; padding: 8px 10px; border-radius: 99px; background: var(--surface2);
+  font-size: 13px; font-weight: 500; color: var(--text2);
+}
 .addBtn {
-  padding: 0 18px; border-radius: var(--radius-lg); color: var(--on-accent); font-weight: 700; font-size: 13px;
-  background: var(--accent);
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+  color: var(--on-accent); background: var(--accent);
 }
-.addBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.addBtn:disabled { background: var(--surface2); color: var(--text3); cursor: not-allowed; }
 
 .empty {
   padding: 24px 16px; text-align: center; color: var(--text2); font-size: 13px; line-height: 1.6;
@@ -20,31 +25,34 @@
 }
 
 .bigCheck {
-  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
-  border: 2px solid var(--border2); background: transparent;
-  color: var(--on-accent); font-size: 18px; font-weight: 800; line-height: 1;
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid var(--border2); background: transparent;
+  color: #fff; display: grid; place-items: center;
 }
-.bigCheck:hover { border-color: var(--success); }
-.bigChecked { background: var(--success); border-color: var(--success); }
-.goal { font-size: 11px; color: var(--text3); font-weight: 600; }
+.bigCheck:hover { border-color: var(--gold); }
+.bigChecked { background: var(--done); border-color: var(--done); }
+.bigChecked svg { stroke-width: 2.6; }
+.goal { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; }
 
 .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
-.stat  { background: var(--surface2); border-radius: var(--radius); padding: 8px 10px; display: flex; flex-direction: column; }
-.statN { font-family: var(--font-display); font-size: 20px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.statN small { font-size: 13px; color: var(--text3); }
-.statL { font-size: 11px; color: var(--text2); font-weight: 600; }
-.statGood .statN { color: var(--success); }
+.stat  { background: var(--surface2); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.statN { font-family: var(--font-serif); font-size: 30px; font-weight: 400; line-height: 1; }
+.statN small { font-size: 17px; color: var(--text3); }
+.statL { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); font-weight: 500; }
+.statGood .statN { color: var(--star-text); }
+.statGood .statL svg { color: var(--done); }
 
 .week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .day {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 6px 0; border-radius: var(--radius); background: var(--surface2);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 7px 0; border-radius: 12px; background: var(--surface2);
   border: 1.5px solid transparent; color: var(--text2);
 }
-.dayName { font-size: 10px; font-weight: 700; color: var(--text3); }
-.dayMark { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.dayName { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 0.06em; }
+.dayMark { display: grid; place-items: center; height: 16px; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .dayDone { background: var(--done-soft); color: var(--done); }
-.dayToday { border-color: var(--accent1); }
+.dayDone svg { stroke-width: 2.4; }
+.dayToday { border-color: var(--gold); }
 .dayFuture { opacity: 0.4; cursor: default; }
 .cellBtn { font: inherit; cursor: pointer; }
 .cellBtn:disabled { cursor: default; }

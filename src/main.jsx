@@ -2,6 +2,9 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
+// Fonts come with the app (work offline, nothing loaded from Google)
+import '@fontsource-variable/inter'
+import '@fontsource/instrument-serif/400.css'
 import './styles/global.css'
 
 // Chrome may offer the install prompt before the app has drawn; keep it for the Install button
@@ -11,11 +14,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
     <Toaster position="top-center" toastOptions={{
-      style: { fontFamily:'var(--font-body)', fontSize:'13px', fontWeight:600,
-        borderRadius:'99px', padding:'10px 18px', background:'var(--surface)',
-        color:'var(--text)', border:'1px solid var(--border2)', boxShadow:'var(--shadow)' },
-      success: { iconTheme:{ primary:'var(--done)', secondary:'var(--surface)' } },
-      error:   { iconTheme:{ primary:'var(--danger)', secondary:'var(--surface)' } },
+      style: { fontFamily:'var(--font-body)', fontSize:'13.5px', fontWeight:500,
+        borderRadius:'16px', padding:'11px 16px', background:'var(--toast-bg)',
+        color:'var(--toast-text)', boxShadow:'var(--shadow-lg)', maxWidth:'92vw' },
+      success: { iconTheme:{ primary:'var(--gold)', secondary:'var(--toast-bg)' } },
+      error:   { iconTheme:{ primary:'var(--danger)', secondary:'var(--toast-bg)' } },
     }} />
   </React.StrictMode>
 )

@@ -1,39 +1,52 @@
 /* src/components/TaskRow.module.css */
 .row {
-  display: flex; align-items: flex-start; gap: 10px;
+  position: relative;
+  display: flex; align-items: flex-start; gap: 12px;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 12px;
+  border-radius: var(--radius-lg); padding: 14px 10px 14px 14px;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, opacity 0.2s;
 }
-.important { border-left: 3px solid var(--star); background: var(--star-soft); }
-.done { opacity: 0.55; }
+.row:active { transform: scale(0.995); }
+.important::before {   /* a thin gold edge for important tasks */
+  content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0;
+  background: var(--gold);
+}
+.done { opacity: 0.6; box-shadow: none; }
 
 .check {
-  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
-  border: 2px solid var(--border2); background: transparent;
-  color: var(--on-accent); font-size: 13px; font-weight: 800; line-height: 1;
-  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; margin-top: -1px;
+  border: 1.5px solid var(--border2); background: transparent;
+  color: var(--on-accent);
+  display: grid; place-items: center;
+  transition: background 0.2s, border-color 0.2s;
 }
-.check:hover { border-color: var(--success); }
-.checked { background: var(--success); border-color: var(--success); }
+.check:hover { border-color: var(--gold); }
+.checked { background: var(--done); border-color: var(--done); color: #fff; }
 
 .body {
   flex: 1; min-width: 0; text-align: left; background: none; color: inherit;
-  display: flex; flex-direction: column; gap: 5px; padding: 1px 0 0;
+  display: flex; flex-direction: column; gap: 7px; padding: 1px 0 0;
 }
-.title { font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
-.done .title { text-decoration: line-through; color: var(--text3); }
-.meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.title { font-size: 15.5px; font-weight: 500; line-height: 1.35; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.done .title { text-decoration: line-through; text-decoration-color: var(--text3); color: var(--text3); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
 .meta:empty { display: none; }
 .chip {
-  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; font-weight: 500; padding: 3px 9px 3px 7px; border-radius: 99px;
   background: var(--surface2); color: var(--text2);
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.carried { background: var(--star-soft); color: var(--star-text); }
+.carried { background: var(--gold-soft); color: var(--star-text); }
 
 .star {
-  flex-shrink: 0; width: 32px; height: 32px; border-radius: 99px;
-  background: transparent; color: var(--text3); font-size: 18px; line-height: 1;
+  flex-shrink: 0; width: 34px; height: 34px; margin: -5px 0 -5px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: transparent; color: var(--text3);
+  transition: color 0.2s;
 }
-.star:hover { color: var(--star); }
-.starOn { color: var(--star); }
+.star:hover { color: var(--gold); }
+.starOn { color: var(--gold); }
+.starOn svg { fill: var(--gold); }
+.checked svg { stroke-width: 2.6; }

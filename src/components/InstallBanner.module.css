@@ -1,16 +1,16 @@
 .banner {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); box-shadow: var(--shadow);
-  padding: 10px 12px; margin-bottom: 16px;
+  padding: 12px 14px; margin-bottom: 18px;
 }
 .top { display: flex; align-items: center; gap: 10px; }
-.icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
+.icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
 .title { flex: 1; min-width: 0; font-size: 14px; color: var(--text); }
 .install {
   background: var(--accent); color: var(--on-accent); flex-shrink: 0;
-  font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 99px;
+  font-size: 13px; font-weight: 600; padding: 8px 15px; border-radius: 99px;
 }
-.close { background: none; color: var(--text3); font-size: 22px; line-height: 1; padding: 2px 4px; }
+.close { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: none; color: var(--text3); }
 .steps {
   margin: 10px 0 2px; padding-left: 20px;
   display: flex; flex-direction: column; gap: 8px;
@@ -18,4 +18,4 @@
 }
 div.steps { padding-left: 0; align-items: flex-start; }
 .steps b { color: var(--text); font-weight: 600; }
-.share { vertical-align: -3px; color: var(--accent); }
+.share { vertical-align: -3px; color: var(--gold); }

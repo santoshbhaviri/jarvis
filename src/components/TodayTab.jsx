@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { format, addDays } from 'date-fns'
+import { Star, Check, Sparkles } from 'lucide-react'
 import { todayStr } from '../lib/dateUtils'
 import { ruleOf, nextAfter } from '../lib/repeat'
 import { doneDay } from '../hooks/useTasks'
@@ -49,7 +50,7 @@ export default function TodayTab({ taskData, onEdit }) {
             <div className={styles.dayDate}>{format(new Date(), 'd MMMM yyyy')}</div>
           </div>
           <div className={styles.score}>
-            <span className={styles.scoreN}>{done.length}<small>/{total}</small></span>
+            <span className={styles.scoreN}>{done.length}<small> / {total}</small></span>
             <span className={styles.scoreL}>done</span>
           </div>
         </div>
@@ -59,7 +60,7 @@ export default function TodayTab({ taskData, onEdit }) {
         {now && (
           <div className={styles.now}>
             <span className={styles.nowLabel}>Next</span>
-            <button className={styles.nowTitle} onClick={() => onEdit(now)}>{now.important ? '★ ' : ''}{now.title}</button>
+            <button className={styles.nowTitle} onClick={() => onEdit(now)}>{now.important && <Star size={15} className={styles.nowStar} />}{now.title}</button>
             <div className={styles.nowActions}>
               <button className={styles.nowDone} onClick={() => setDone(now, true)}>Done</button>
               {todo.length > 1 && <button className={styles.nowLater} onClick={() => setSkipped(s => [...s, now.id])}>Later</button>}
@@ -76,8 +77,8 @@ export default function TodayTab({ taskData, onEdit }) {
       {rest.length > 0 && <SectionHeader label={now ? 'Also today' : 'To do'} count={rest.length} accent="var(--accent)" />}
       <div className={styles.list}>
         {rest.map(t => <TaskRow key={t.id} task={t} {...rowProps} />)}
-        {todo.length === 0 && total > 0 && <p className={styles.none}>All done for today. 🎉</p>}
-        {total === 0 && <p className={styles.none}>Nothing planned. Tap the Jarvis button to add.</p>}
+        {todo.length === 0 && total > 0 && <p className={styles.none}><Sparkles size={16} className={styles.noneIcon} />All done for today.</p>}
+        {total === 0 && <p className={styles.none}>Nothing planned yet.</p>}
       </div>
 
       {done.length > 0 && (
@@ -132,14 +133,14 @@ function Wrapup({ todo, onDone, moveTask, deleteTask, addTask, setDone }) {
       {todo.map(t => (
         <div key={t.id} className={styles.wrapRow}>
           <span className={styles.wrapTitle}>{t.title}</span>
-          <button onClick={() => setDone(t, true)} aria-label={`${t.title} done`}>✓</button>
+          <button onClick={() => setDone(t, true)} aria-label={`${t.title} done`}><Check size={15} /></button>
           <button onClick={() => moveTask(t, tomorrow)}>Tomorrow</button>
           <button className={styles.wrapDrop} onClick={() => drop(t)}>Drop</button>
         </div>
       ))}
       <div className={styles.wrapFoot}>
-        <button className={styles.nowDone} onClick={allTomorrow}>All to tomorrow</button>
-        <button className={styles.nowLater} onClick={onDone}>Close</button>
+        <button className={styles.btnPrimary} onClick={allTomorrow}>All to tomorrow</button>
+        <button className={styles.btnGhost} onClick={onDone}>Close</button>
       </div>
     </div>
   )

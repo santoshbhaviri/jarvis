@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
+import { Check, CircleCheck, RotateCcw, Trash2 } from 'lucide-react'
 import { todayStr } from '../lib/dateUtils'
 import { doneDay, BIN_DAYS } from '../hooks/useTasks'
 import SectionHeader from './SectionHeader'
@@ -41,7 +42,7 @@ export default function DoneTab({ taskData }) {
 
   if (!finished.length) return (
     <div className={styles.empty}>
-      <div className={styles.emptyIcon}>✅</div>
+      <CircleCheck size={40} className={styles.emptyIcon} />
       <p>Finished tasks stay here for {BIN_DAYS} days.</p>
     </div>
   )
@@ -55,7 +56,7 @@ export default function DoneTab({ taskData }) {
             {list.map(t => {
               return (
                 <li key={t.id} className={styles.item}>
-                  <span className={styles.tick}>✓</span>
+                  <span className={styles.tick}><Check size={14} /></span>
                   <div className={styles.body}>
                     <span className={styles.title}>{t.title}</span>
                     <span className={styles.meta}>
@@ -63,11 +64,11 @@ export default function DoneTab({ taskData }) {
                     </span>
                   </div>
                   <div className={styles.actions}>
-                    <button className={styles.btn} onClick={() => restore(t)} title="Move back to today">Restore</button>
+                    <button className={styles.btn} onClick={() => restore(t)} title="Move back to today"><RotateCcw size={14} />Restore</button>
                     <button className={`${styles.btn} ${styles.del} ${armed === t.id ? styles.armed : ''}`}
                       onClick={() => remove(t)}
                       onBlur={() => setArmed(a => a === t.id ? null : a)}>
-                      {armed === t.id ? 'Delete?' : '🗑'}
+                      {armed === t.id ? 'Delete?' : <Trash2 size={15} aria-label="Delete" />}
                     </button>
                   </div>
                 </li>

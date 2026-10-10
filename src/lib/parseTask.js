@@ -140,7 +140,7 @@ export function parseCommand(text, now = new Date()) {
   return parts.map(p => {
     const t = parseTask(p, now)
     if (t.dated) carry = t.due_date
-    else if (carry && t.status !== 'routine') t.due_date = carry
+    else if (carry && t.status !== 'routine' && !t.notes?.startsWith('↻ ')) t.due_date = carry   // a repeat keeps its own day
     return { ...t }
   })
 }

@@ -5,15 +5,16 @@
 .routineCard {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 12px 14px;
-  transition: all 0.2s;
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s;
 }
-.routineCard:hover { border-color: rgba(6,182,212,0.25); box-shadow: 0 0 16px rgba(6,182,212,0.06); }
+.routineCard:hover { border-color: var(--border2); }
 .completedCard { opacity: 0.45; }
 
 /* Top row */
-.cardTop { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.cardTop { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
 
 .checkbox {
   width: 20px; height: 20px; border-radius: 6px;
@@ -26,7 +27,7 @@
 .checkMark { color: var(--on-accent); font-size: 11px; font-weight: 800; }
 
 .cardInfo { flex: 1; min-width: 0; }
-.cardTitle { font-size: 14px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px; line-height: 1.4; }
+.cardTitle { font-family: var(--font-serif); font-size: 23px; font-weight: 400; color: var(--text); display: block; margin-bottom: 3px; line-height: 1.1; }
 .completedCard .cardTitle { text-decoration: line-through; color: var(--text3); }
 
 .meta { display: flex; gap: 5px; flex-wrap: wrap; }
@@ -34,20 +35,13 @@
 .streakBadge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: var(--star-soft); color: var(--star); }
 
 .topActions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
-.calBtn {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 4px 7px; font-size: 12px;
-  transition: all 0.15s; cursor: pointer; line-height: 1;
+.calBtn, .editBtn {
+  width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  background: transparent; color: var(--text2);
+  transition: background 0.15s, color 0.15s; cursor: pointer;
 }
-.calBtn:hover { border-color: var(--accent1); }
-.calBtnActive { background: var(--accent-soft); border-color: var(--accent1); }
-
-.editBtn {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 4px 7px; font-size: 12px;
-  transition: all 0.15s; cursor: pointer;
-}
-.editBtn:hover { border-color: var(--accent1); }
+.calBtn:hover, .editBtn:hover { background: var(--surface2); color: var(--text); }
+.calBtnActive { background: var(--accent-soft); color: var(--accent); }
 .editBtnActive { background: var(--accent-soft); border-color: var(--accent1); }
 
 /* ══════════════════════════════════════════
@@ -143,9 +137,8 @@
 }
 
 .calendarLabel {
-  font-size: 10px; font-weight: 700; color: var(--text2);
+  font-family: var(--font-serif); font-size: 18px; font-weight: 400; color: var(--text);
   text-align: center; margin-bottom: 4px;
-  text-transform: uppercase; letter-spacing: 0.5px;
 }
 
 .calendarHeader,
@@ -164,7 +157,7 @@
 /* Calendar cell: one tappable day */
 .dayCell {
   height: 34px;
-  border-radius: 6px;
+  border-radius: 10px;
   border: 1.5px solid transparent;
   background: var(--surface3);
   display: flex; align-items: center; justify-content: center;
@@ -175,13 +168,13 @@
 
 .dayCellDone   { background: var(--done-soft); border-color: var(--done-soft); }
 .dayCellMissed { background: var(--missed-soft); border-color: var(--missed-soft); }
-.dayCellToday  { border-color: var(--accent1) !important; box-shadow: inset 0 0 0 1px var(--accent1); }
+.dayCellToday  { border-color: var(--gold) !important; }
 .dayCellFuture { opacity: 0.2; }
 
 .dayNum { font-size: 12px; font-weight: 700; line-height: 1; color: var(--text3); }
 .dayCellDone .dayNum    { color: var(--done); }
 .dayCellMissed .dayNum  { color: var(--missed); }
-.dayCellToday .dayNum   { color: var(--accent1); font-weight: 800; }
+.dayCellToday .dayNum   { color: var(--star-text); font-weight: 700; }
 
 /* Done — soft muted green */
 .bubbleDone {

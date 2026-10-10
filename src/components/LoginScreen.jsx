@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import InstallBanner from './InstallBanner'
+import Monogram from './Monogram'
 import styles from './LoginScreen.module.css'
 
 export default function LoginScreen({ onSignIn, onSignUp }) {
@@ -22,7 +23,7 @@ export default function LoginScreen({ onSignIn, onSignUp }) {
   return (
     <div className={styles.wrap}>
       <form className={styles.card} onSubmit={submit}>
-        <div className={styles.brand}><span>⚡</span> JARVIS</div>
+        <div className={styles.brand}><Monogram size={44} /><span>Jarvis</span></div>
         <p className={styles.sub}>{mode === 'in' ? 'Sign in to see your tasks.' : 'Create your account. Only you will see your tasks.'}</p>
         <label className={styles.label} htmlFor="email">Email</label>
         <input id="email" className={styles.input} type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} />

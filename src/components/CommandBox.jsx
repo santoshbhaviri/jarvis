@@ -1,6 +1,7 @@
 // The typing box used on every tab. Type and press Enter (or the arrow), or tap the mic
 // to speak instead. Speaking fills the box; with voiceSubmits it goes as soon as you stop.
 import { useEffect, useRef } from 'react'
+import { Mic, ArrowUp } from 'lucide-react'
 import { useVoice, voiceSupported } from '../hooks/useVoice'
 import styles from './CommandBox.module.css'
 
@@ -30,29 +31,12 @@ export default function CommandBox({ value, onChange, onSubmit, placeholder, lab
       {voiceSupported && (
         <button type="button" className={`${styles.mic} ${voice.listening ? styles.micOn : ''}`}
           onClick={() => voice.toggle(value)} aria-label={voice.listening ? 'Stop listening' : 'Speak'}>
-          <MicIcon />
+          <Mic size={20} />
         </button>
       )}
       <button type="submit" className={styles.send} disabled={!value.trim() || busy} aria-label="Send">
-        <ArrowIcon />
+        <ArrowUp size={18} />
       </button>
     </form>
-  )
-}
-
-function MicIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-    </svg>
-  )
-}
-
-function ArrowIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 19V5M5 12l7-7 7 7" />
-    </svg>
   )
 }

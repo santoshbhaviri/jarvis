@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { formatDistanceToNowStrict } from 'date-fns'
+import { Volume2, Copy, ArrowUpRight, Sparkles, Clock } from 'lucide-react'
 import { searchWeb, searchAnswer } from '../lib/server'
 import { googleLink } from '../lib/assistant'
 import CommandBox from './CommandBox'
@@ -57,7 +58,7 @@ export default function SearchTab() {
 
       {!res && recent().length > 0 && (
         <div className={styles.recent}>
-          {recent().map(r => <button key={r} className={styles.chip} onClick={() => search(r)}>{r}</button>)}
+          {recent().map(r => <button key={r} className={styles.chip} onClick={() => search(r)}><Clock size={13} />{r}</button>)}
         </div>
       )}
 
@@ -65,7 +66,7 @@ export default function SearchTab() {
         <div className={styles.results}>
           <div className={styles.head}>
             <strong className={styles.q}>{res.q}</strong>
-            <a className={styles.google} href={googleLink(res.q)} target="_blank" rel="noreferrer">Google ↗</a>
+            <a className={styles.google} href={googleLink(res.q)} target="_blank" rel="noreferrer">Google<ArrowUpRight size={14} /></a>
           </div>
 
           {res.loading && <p className={styles.muted}>Searching…</p>}
@@ -74,12 +75,13 @@ export default function SearchTab() {
 
           {(res.thinking || res.answer) && (
             <div className={styles.answer}>
+              <div className={styles.answerHead}><Sparkles size={14} />Jarvis</div>
               {res.answer
                 ? <>
                     <p>{res.answer}</p>
                     <div className={styles.tools}>
-                      <button onClick={() => speak(res.answer)} aria-label="Read aloud">🔊</button>
-                      <button onClick={() => copy(res.answer)} aria-label="Copy answer">⧉</button>
+                      <button onClick={() => speak(res.answer)} aria-label="Read aloud"><Volume2 size={16} /></button>
+                      <button onClick={() => copy(res.answer)} aria-label="Copy answer"><Copy size={15} /></button>
                     </div>
                   </>
                 : <p className={styles.muted}>Thinking…</p>}
@@ -87,6 +89,7 @@ export default function SearchTab() {
           )}
           {res.answerError && <p className={styles.muted}>{res.answerError}</p>}
 
+          {res.news?.length > 0 && <div className={styles.label}>Latest news</div>}
           {res.news?.length > 0 && (
             <ul className={styles.news} aria-label="News">
               {res.news.map(n => (
@@ -102,7 +105,7 @@ export default function SearchTab() {
             <div className={styles.wiki}>
               <div className={styles.wikiTitle}>{res.wiki.title} <small>Wikipedia</small></div>
               <p>{res.wiki.extract}</p>
-              {res.wiki.link && <a href={res.wiki.link} target="_blank" rel="noreferrer">Read more ↗</a>}
+              {res.wiki.link && <a href={res.wiki.link} target="_blank" rel="noreferrer">Read more<ArrowUpRight size={14} /></a>}
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { formatDistanceToNowStrict } from 'date-fns'
+import { Check, ArrowUpRight } from 'lucide-react'
 import { sendRequest, approveUpdate, changeUpdate, dropUpdate } from '../lib/server'
 import { improveLink } from '../lib/assistant'
 import CommandBox from './CommandBox'
@@ -59,7 +60,7 @@ export default function EvolveTab({ data, ready, onChanged }) {
         <section>
           <SectionHeader label="Added lately" count={done.length} accent="var(--done)" />
           <ul className={styles.rows}>
-            {done.map(d => <li key={d.number}><span>✓ {d.title}</span><small>{ago(d.closed)}</small></li>)}
+            {done.map(d => <li key={d.number}><span className={styles.doneTitle}><Check size={15} />{d.title}</span><small>{ago(d.closed)}</small></li>)}
           </ul>
         </section>
       )}
@@ -91,7 +92,7 @@ function Update({ u, onChanged }) {
       <div className={styles.title}>{u.title}</div>
       {u.summary && <div className={styles.summary}>{u.summary}</div>}
       <div className={styles.actions}>
-        <a className={styles.btn} href={u.preview} target="_blank" rel="noreferrer">Try it</a>
+        <a className={styles.btn} href={u.preview} target="_blank" rel="noreferrer">Try it<ArrowUpRight size={14} /></a>
         <button className={`${styles.btn} ${styles.primary}`} disabled={busy}
           onClick={() => act(() => approveUpdate(u.number), 'Approved. Live in a couple of minutes.')}>Approve</button>
         <button className={styles.btn} onClick={() => setChanging(c => !c)}>Change</button>

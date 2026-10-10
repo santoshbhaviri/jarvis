@@ -1,23 +1,28 @@
 .box {
-  display: flex; align-items: flex-end; gap: 6px;
-  padding: 6px 6px 6px 14px;
-  background: var(--surface); border: 1.5px solid var(--border2);
-  border-radius: 24px; box-shadow: var(--shadow);
+  display: flex; align-items: flex-end; gap: 4px;
+  padding: 6px 6px 6px 16px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 26px; box-shadow: var(--shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.box:focus-within, .listening { border-color: var(--accent); }
+.box:focus-within, .listening { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-soft), var(--shadow); }
 .input {
   flex: 1; min-width: 0; resize: none; align-self: center;
-  padding: 8px 0; font-size: 16px; line-height: 1.4;
+  padding: 9px 0; font-size: 16px; line-height: 1.4; letter-spacing: -0.01em;
   background: none; color: var(--text); border: 0; outline: none;
 }
 .input::placeholder { color: var(--text3); }
 .mic, .send {
-  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
   display: grid; place-items: center;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
 }
 .mic { background: none; color: var(--text2); }
-.micOn { background: var(--accent-soft); color: var(--accent); animation: pulse 1.2s infinite; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--accent-soft); } }
+.mic:hover { color: var(--text); }
+.micOn { background: var(--gold-soft); color: var(--gold); animation: pulse 1.4s infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 7px var(--gold-soft); } }
 @media (prefers-reduced-motion: reduce) { .micOn { animation: none; } }
 .send { background: var(--accent); color: var(--on-accent); }
-.send:disabled { background: var(--surface3); color: var(--text3); }
+.send:active:not(:disabled) { transform: scale(0.94); }
+.send:disabled { background: var(--surface2); color: var(--text3); }
+.send svg { stroke-width: 2.2; }

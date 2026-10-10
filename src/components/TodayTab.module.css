@@ -1,42 +1,66 @@
 /* src/components/TodayTab.module.css */
-.dayCard {
-  background: var(--hero-bg);
-  border: 1px solid var(--accent-soft);
-  border-radius: var(--radius-xl); padding: 16px; margin-bottom: 16px;
-}
-.dayTop  { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
-.dayName { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.1; letter-spacing: -0.3px; }
-.dayDate { font-size: 12px; color: var(--text2); margin-top: 2px; }
-.score   { display: flex; flex-direction: column; align-items: flex-end; }
-.scoreN  { font-family: var(--font-display); font-size: 28px; font-weight: 800; line-height: 1; color: var(--success); font-variant-numeric: tabular-nums; }
-.scoreN small { font-size: 16px; color: var(--text3); }
-.scoreL  { font-size: 11px; color: var(--text2); font-weight: 600; }
-.bar { height: 8px; border-radius: 99px; background: var(--surface2); overflow: hidden; margin-top: 12px; }
-.bar span { display: block; height: 100%; background: var(--success); border-radius: 99px; transition: width 0.3s; }
 
-.list { display: flex; flex-direction: column; gap: 8px; }
-.none { text-align: center; color: var(--text3); font-size: 13px; padding: 18px 8px; line-height: 1.5; }
-.note { font-size: 11px; color: var(--text3); margin-top: 8px; line-height: 1.5; }
-.laterToggle { display: block; width: 100%; background: none; text-align: left; padding: 0; color: inherit; }
+/* The day card: midnight with gold, like a premium card */
+.dayCard {
+  position: relative; overflow: hidden;
+  background: var(--hero-bg); color: var(--hero-text);
+  border: 1px solid var(--hero-border);
+  border-radius: var(--radius-xl); padding: 20px 20px 18px; margin-bottom: 22px;
+  box-shadow: var(--shadow-lg);
+}
+.dayCard::after {   /* a thin gold line along the top edge */
+  content: ''; position: absolute; left: 24px; right: 24px; top: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(216,185,118,0), rgba(216,185,118,0.7), rgba(216,185,118,0));
+  pointer-events: none;
+}
+.dayTop  { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.dayName { font-family: var(--font-serif); font-size: 38px; font-weight: 400; line-height: 1; letter-spacing: -0.01em; }
+.dayDate { font-size: 11.5px; color: var(--hero-text2); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 500; }
+.score   { display: flex; flex-direction: column; align-items: flex-end; }
+.scoreN  { font-family: var(--font-serif); font-size: 38px; font-weight: 400; line-height: 1; color: var(--hero-gold); font-variant-numeric: lining-nums; }
+.scoreN small { font-size: 20px; color: var(--hero-text2); }
+.scoreL  { font-size: 11px; color: var(--hero-text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; margin-top: 8px; }
+.bar { position: relative; height: 3px; border-radius: 99px; background: var(--hero-line); overflow: hidden; margin-top: 18px; }
+.bar span { display: block; height: 100%; background: linear-gradient(90deg, #b8955a, #e2c88c); border-radius: 99px; transition: width 0.4s ease; }
 
 /* Next task, inside the day card */
-.now { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-.nowLabel { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.6px; }
-.nowTitle { background: none; text-align: left; padding: 0; color: var(--text); font-size: 18px; font-weight: 600; line-height: 1.3; }
-.nowActions { display: flex; gap: 8px; }
-.nowDone, .nowLater { padding: 9px 18px; border-radius: 99px; font-size: 13px; font-weight: 700; }
-.nowDone { background: var(--accent); color: var(--on-accent); }
-.nowLater { background: var(--surface2); color: var(--text2); }
+.now { position: relative; margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.nowLabel { font-size: 10.5px; font-weight: 600; color: var(--hero-gold); text-transform: uppercase; letter-spacing: 0.18em; }
+.nowTitle {
+  display: flex; align-items: baseline; gap: 8px;
+  background: none; text-align: left; padding: 0; color: var(--hero-text);
+  font-size: 19px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em;
+}
+.nowStar { color: var(--hero-gold); fill: var(--hero-gold); align-self: center; }
+.nowActions { display: flex; gap: 8px; margin-top: 2px; }
+.nowDone, .nowLater { padding: 9px 20px; border-radius: 99px; font-size: 13.5px; font-weight: 600; }
+.nowDone { background: var(--hero-gold); color: #141a2b; }
+.nowLater { background: rgba(255,255,255,0.08); color: var(--hero-text); box-shadow: inset 0 0 0 1px var(--hero-line); }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.none { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text3); font-size: 14px; padding: 20px 8px; }
+.noneIcon { color: var(--gold); }
+.note { font-size: 11px; color: var(--text3); margin-top: 8px; line-height: 1.5; }
+.laterToggle { display: block; width: 100%; background: none; text-align: left; padding: 0; color: inherit; margin-top: 26px; }
 
 /* Evening wrap-up */
-.wrap { background: var(--surface); border: 1px solid var(--accent-soft); border-radius: var(--radius-xl); padding: 14px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+.wrap {
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+  border-radius: var(--radius-xl); padding: 16px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 8px;
+}
 .wrapHead { display: flex; justify-content: space-between; align-items: baseline; }
-.wrapHead strong { font-size: 15px; }
-.wrapHead span { font-size: 12px; color: var(--text3); font-weight: 600; }
-.wrapRow { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid var(--border); }
-.wrapTitle { flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
-.wrapRow button { flex-shrink: 0; padding: 6px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface2); color: var(--text); }
+.wrapHead strong { font-family: var(--font-serif); font-size: 24px; font-weight: 400; }
+.wrapHead span { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; }
+.wrapRow { display: flex; align-items: center; gap: 6px; padding: 8px 0; border-top: 1px solid var(--border); }
+.wrapTitle { flex: 1; min-width: 0; font-size: 14.5px; overflow-wrap: anywhere; }
+.wrapRow button {
+  flex-shrink: 0; display: inline-grid; place-items: center; min-width: 32px; height: 32px; padding: 0 12px;
+  border-radius: 99px; font-size: 12.5px; font-weight: 600; background: var(--surface2); color: var(--text);
+}
 .wrapRow .wrapDrop { color: var(--text3); background: none; }
-.wrapFoot { display: flex; gap: 8px; margin-top: 4px; }
+.wrapFoot { display: flex; gap: 8px; margin-top: 6px; }
+.btnPrimary, .btnGhost { padding: 10px 20px; border-radius: 99px; font-size: 13.5px; font-weight: 600; }
+.btnPrimary { background: var(--accent); color: var(--on-accent); }
+.btnGhost { background: var(--surface2); color: var(--text2); }
 .toast { display: flex; align-items: center; gap: 10px; }
-.toast button { background: none; color: var(--accent); font-weight: 700; }
+.toast button { background: none; color: var(--gold); font-weight: 700; }

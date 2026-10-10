@@ -1,38 +1,37 @@
 /* src/components/EditTaskModal.module.css */
 .overlay {
   position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  background: rgba(6,9,18,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   display: flex; align-items: flex-end; justify-content: center;
 }
 .modal {
-  background: var(--surface2);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--bg);
+  border-radius: 26px 26px 0 0;
   border-top: 1px solid var(--border2);
   width: 100%; max-width: 680px;
   max-height: 92dvh; overflow-y: auto;
   display: flex; flex-direction: column;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Header */
 .header {
   display: flex; align-items: flex-start; justify-content: space-between;
-  padding: 18px 18px 12px;
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--surface2); z-index: 10;
+  padding: 20px 18px 12px;
+  position: sticky; top: 0; background: var(--bg); z-index: 10;
 }
 .title {
-  font-family: var(--font-display);
-  font-size: 16px; font-weight: 800; color: var(--text);
+  font-family: var(--font-serif);
+  font-size: 28px; font-weight: 400; line-height: 1.1; color: var(--text);
 }
-.sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
 .closeBtn {
-  background: var(--surface3); border: 1px solid var(--border2);
-  border-radius: 99px; width: 28px; height: 28px; font-size: 12px;
-  color: var(--text2); display: flex; align-items: center; justify-content: center;
+  background: var(--surface2);
+  border-radius: 99px; width: 34px; height: 34px;
+  color: var(--text2); display: grid; place-items: center;
   flex-shrink: 0;
 }
-.closeBtn:hover { background: var(--missed-soft); color: var(--danger); border-color: var(--danger); }
+.closeBtn:hover { color: var(--text); }
 
 /* Body */
 .body {
@@ -44,13 +43,14 @@
 /* Individual task row */
 .row {
   background: var(--surface);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 12px;
-  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
   transition: border-color 0.2s;
 }
-.rowFilled { border-color: var(--accent-soft); }
+.rowFilled { border-color: var(--border); }
 
 .rowHeader {
   display: flex; align-items: center; justify-content: space-between;
@@ -71,23 +71,23 @@
 .removeBtn:hover { color: var(--danger); background: var(--missed-soft); }
 
 /* Fields */
-.field { display: flex; flex-direction: column; gap: 4px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
 .label {
-  font-size: 10px; font-weight: 700; color: var(--text2);
-  text-transform: uppercase; letter-spacing: 0.5px;
+  font-size: 10.5px; font-weight: 600; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.14em;
 }
 .req  { color: var(--danger); margin-left: 2px; }
 .hint { font-size: 9px; color: var(--text3); text-transform: none; letter-spacing: 0; margin-left: 4px; font-weight: 400; }
 .err  { font-size: 10px; color: var(--danger); font-weight: 600; margin-top: 2px; }
 
 .input {
-  padding: 8px 10px;
-  background: var(--surface2); border: 1.5px solid var(--border2);
-  border-radius: var(--radius-sm); color: var(--text);
-  font-size: 13px; outline: none; width: 100%; box-sizing: border-box;
-  transition: border-color 0.15s;
+  padding: 11px 13px;
+  background: var(--surface2); border: 1px solid transparent;
+  border-radius: var(--radius); color: var(--text);
+  font-size: 16px; outline: none; width: 100%; box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.input:focus   { border-color: var(--accent1); background: var(--surface3); }
+.input:focus   { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-soft); background: var(--surface); }
 .input:disabled { opacity: 0.3; cursor: not-allowed; }
 .inputErr { border-color: var(--danger) !important; }
 
@@ -108,17 +108,17 @@
 /* Segmented buttons */
 .segmented { display: flex; gap: 5px; flex-wrap: wrap; }
 .seg {
-  padding: 5px 10px; border-radius: 99px;
-  border: 1.5px solid var(--border2);
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 14px; border-radius: 99px;
+  border: 1px solid var(--border2);
   background: transparent; color: var(--text2);
-  font-size: 11px; font-weight: 600;
+  font-size: 13px; font-weight: 500;
   transition: all 0.15s; white-space: nowrap;
 }
-.seg:hover { border-color: var(--accent1); color: var(--accent1); }
+.seg:hover { color: var(--text); }
 .segActive {
   background: var(--accent);
   border-color: transparent; color: var(--on-accent);
-  box-shadow: var(--accent-glow);
 }
 
 /* Add row button */
@@ -136,28 +136,26 @@
 /* Footer */
 .footer {
   display: flex; gap: 10px;
-  padding: 12px 14px 20px;
+  padding: 14px 14px calc(18px + env(safe-area-inset-bottom));
   position: sticky; bottom: 0;
-  background: var(--surface2);
-  border-top: 1px solid var(--border);
-  margin-top: 10px;
+  background: var(--bg);
+  margin-top: 6px;
 }
 .cancelBtn {
-  flex: 1; padding: 11px;
-  border: 1.5px solid var(--border2); border-radius: var(--radius);
-  background: var(--surface3); color: var(--text2);
-  font-size: 13px; font-weight: 700;
+  flex: 1; padding: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; border-radius: 99px;
+  background: var(--surface2); color: var(--text2);
+  font-size: 14px; font-weight: 600;
 }
-.cancelBtn:hover { border-color: var(--border2); background: var(--surface2); }
+.cancelBtn:hover { color: var(--danger); }
 
 .saveBtn {
-  flex: 2; padding: 11px; border: none; border-radius: var(--radius);
+  flex: 2; padding: 13px; border: none; border-radius: 99px;
   background: var(--accent);
-  color: var(--on-accent); font-size: 13px; font-weight: 800;
-  box-shadow: var(--accent-glow);
-  transition: all 0.15s;
+  color: var(--on-accent); font-size: 14.5px; font-weight: 600;
+  transition: transform 0.15s;
 }
-.saveBtn:hover:not(:disabled) { box-shadow: var(--accent-glow); transform: translateY(-1px); }
+.saveBtn:active:not(:disabled) { transform: scale(0.98); }
 .saveBtn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 @media (min-width: 600px) {

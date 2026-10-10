@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
+import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen } from 'lucide-react'
 import { askJarvis, isReady } from '../lib/server'
 import { dayContext, chatgptLink, claudeLink, googleLink } from '../lib/assistant'
 import { todayStr } from '../lib/dateUtils'
@@ -52,7 +53,7 @@ export default function AssistTab({ taskData }) {
     <div className={styles.tab}>
       {turns.length > 0 && (
         <div className={styles.thread}>
-          <button className={styles.fresh} onClick={() => setTurns([])}>New chat</button>
+          <button className={styles.fresh} onClick={() => setTurns([])}><SquarePen size={15} />New chat</button>
           {turns.map((t, i) => t.role === 'user'
             ? <div key={i} className={styles.me}>{t.text}</div>
             : <Answer key={i} turn={t} addTask={addTask} />)}
@@ -70,9 +71,9 @@ export default function AssistTab({ taskData }) {
         <div className={styles.elsewhere}>
           <div className={styles.me}>{asked}</div>
           <div className={styles.actions}>
-            <a className={styles.small} href={chatgptLink(asked, ctx)} target="_blank" rel="noreferrer">ChatGPT ↗</a>
-            <a className={styles.small} href={claudeLink(asked, ctx)} target="_blank" rel="noreferrer">Claude ↗</a>
-            <a className={styles.small} href={googleLink(asked, ctx)} target="_blank" rel="noreferrer">Google ↗</a>
+            <a className={styles.small} href={chatgptLink(asked, ctx)} target="_blank" rel="noreferrer">ChatGPT<ArrowUpRight size={14} /></a>
+            <a className={styles.small} href={claudeLink(asked, ctx)} target="_blank" rel="noreferrer">Claude<ArrowUpRight size={14} /></a>
+            <a className={styles.small} href={googleLink(asked, ctx)} target="_blank" rel="noreferrer">Google<ArrowUpRight size={14} /></a>
           </div>
           <p className={styles.note}>Add the free Gemini key in Netlify to chat right here.</p>
         </div>
@@ -109,8 +110,8 @@ function Answer({ turn, addTask }) {
       <div className={styles.text}>{turn.text}</div>
       {!turn.error && (
         <div className={styles.tools}>
-          <button onClick={speak} aria-label="Read aloud">🔊</button>
-          <button onClick={() => copy(turn.text)} aria-label="Copy answer">⧉</button>
+          <button onClick={speak} aria-label="Read aloud"><Volume2 size={16} /></button>
+          <button onClick={() => copy(turn.text)} aria-label="Copy answer"><Copy size={15} /></button>
         </div>
       )}
       {a?.tasks?.length > 0 && (
@@ -118,13 +119,13 @@ function Answer({ turn, addTask }) {
           {a.tasks.map((t, i) => (
             <div key={i} className={styles.taskRow}>
               <span>{t.title}<small>{t.date && t.date > todayStr() ? ` · ${format(parseISO(t.date), 'd MMM')}` : ''}</small></span>
-              <button className={styles.small} disabled={added[i]} onClick={() => add(t, i)}>{added[i] ? '✓' : '+ Add'}</button>
+              <button className={styles.small} disabled={added[i]} onClick={() => add(t, i)}>{added[i] ? <Check size={14} /> : <><Plus size={14} />Add</>}</button>
             </div>
           ))}
         </div>
       )}
       {a?.message && <MessageCard m={a.message} copy={copy} />}
-      {a?.call && <a className={styles.small} href={`tel:${a.call.replace(/[^\d+]/g, '')}`}>📞 Call {a.call}</a>}
+      {a?.call && <a className={styles.small} href={`tel:${a.call.replace(/[^\d+]/g, '')}`}><Phone size={14} />Call {a.call}</a>}
     </div>
   )
 }

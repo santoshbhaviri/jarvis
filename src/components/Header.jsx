@@ -1,5 +1,7 @@
 // src/components/Header.jsx
 import toast from 'react-hot-toast'
+import { Bell, BellOff, Sun, Moon, LogOut } from 'lucide-react'
+import Monogram from './Monogram'
 import styles from './Header.module.css'
 
 export default function Header({ isDark, onToggleTheme, reminders, onSignOut }) {
@@ -7,7 +9,7 @@ export default function Header({ isDark, onToggleTheme, reminders, onSignOut }) 
     if (reminders.permission === 'granted') {
       toast(reminders.pushConfigured
         ? 'Reminders are on. You get a summary every morning.'
-        : 'Reminders are on while JARVIS is open. Finish the push setup in the README for reminders when it is closed.', { icon: '🔔', duration: 5000 })
+        : 'Reminders are on while JARVIS is open. Finish the push setup in the README for reminders when it is closed.', { duration: 5000 })
       return
     }
     if (reminders.permission === 'denied') {
@@ -22,36 +24,21 @@ export default function Header({ isDark, onToggleTheme, reminders, onSignOut }) 
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        {/* Brand */}
         <div className={styles.brand}>
-          <span className={styles.logo}>⚡</span>
-          <span className={styles.name}>JARVIS</span>
+          <Monogram size={30} />
+          <span className={styles.name}>Jarvis</span>
         </div>
 
-        {/* Right side: reminders, theme, sign out */}
         <div className={styles.right}>
-          <button
-            className={styles.iconBtn}
-            onClick={bell}
-            title={reminders.permission === 'granted' ? 'Reminders are on' : 'Turn on reminders'}
-            aria-label="Reminders"
-          >{reminders.permission === 'granted' ? '🔔' : '🔕'}</button>
-
-          {/* Dark / Light toggle */}
-          <button
-            className={styles.themeToggle}
-            onClick={onToggleTheme}
-            title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            aria-label="Toggle theme"
-          >
-            <span className={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</span>
-            {/* Toggle track */}
-            <span className={`${styles.track} ${!isDark ? styles.trackOn : ''}`}>
-              <span className={styles.thumb} />
-            </span>
+          <button className={styles.iconBtn} onClick={bell} aria-label="Reminders"
+            title={reminders.permission === 'granted' ? 'Reminders are on' : 'Turn on reminders'}>
+            {reminders.permission === 'granted' ? <Bell size={18} /> : <BellOff size={18} />}
           </button>
-
-          <button className={styles.iconBtn} onClick={onSignOut} title="Sign out" aria-label="Sign out">🚪</button>
+          <button className={styles.iconBtn} onClick={onToggleTheme} aria-label="Toggle theme"
+            title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}>
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button className={styles.iconBtn} onClick={onSignOut} title="Sign out" aria-label="Sign out"><LogOut size={18} /></button>
         </div>
       </div>
     </header>

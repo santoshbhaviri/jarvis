@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
+import { Star, Repeat, Hourglass, Check } from 'lucide-react'
 import { parseCommand } from '../lib/parseTask'
 import { usualTasks } from '../lib/memory'
 import { todayStr } from '../lib/dateUtils'
@@ -32,7 +33,8 @@ export default function AddTasks({ taskData }) {
     const undo = async (id) => { toast.dismiss(id); for (const t of added) await deleteTask(t.id) }
     toast((tt) => (
       <span className={styles.toast}>
-        <span>✓ {added.length === 1 ? `${added[0].title} · ${dayLabel(added[0])}` : `${added.length} tasks added`}</span>
+        <Check size={16} className={styles.ok} />
+        <span>{added.length === 1 ? `${added[0].title} · ${dayLabel(added[0])}` : `${added.length} tasks added`}</span>
         <button onClick={() => undo(tt.id)}>Undo</button>
       </span>
     ), { duration: 5000 })
@@ -46,8 +48,8 @@ export default function AddTasks({ taskData }) {
       {preview.length > 0 && (
         <ul className={styles.preview} aria-label="Preview">
           {preview.map((t, i) => (
-            <li key={i}><span>{t.important ? '★ ' : ''}{t.title}</span>
-              <small>{dayLabel(t)}{t.notes?.startsWith('↻ ') ? ` · ${t.notes.slice(2)}` : ''}{t.follow_up ? ' · ⏳ follow up' : ''}</small></li>
+            <li key={i}><span className={styles.pTitle}>{t.important && <Star size={14} className={styles.star} />}{t.title}</span>
+              <small>{t.notes?.startsWith('↻ ') && <Repeat size={12} />}{t.follow_up && <Hourglass size={12} />}{dayLabel(t)}</small></li>
           ))}
         </ul>
       )}

@@ -17,7 +17,7 @@ export function useVoice(onText, onEnd, onFail) {
 
   const toggle = useCallback((before = '') => {
     if (!SpeechRecognition) {
-      toast('Voice is not supported in this browser. Use the mic key on your keyboard instead.', { icon: '🎙️', duration: 5000 })
+      toast('Voice is not supported in this browser. Use the mic key on your keyboard instead.', { duration: 5000 })
       return
     }
     if (recRef.current) { recRef.current.stop(); return }
@@ -35,7 +35,7 @@ export function useVoice(onText, onEnd, onFail) {
     }
     rec.onerror = (ev) => {
       if (ev.error === 'no-speech' || ev.error === 'aborted') return
-      if (ev.error === 'not-allowed') toast('Microphone is off for Jarvis, so type instead', { icon: '⌨️' })
+      if (ev.error === 'not-allowed') toast('Microphone is off for Jarvis, so type instead')
       onFail?.(ev.error)
     }
     rec.onend = () => { recRef.current = null; setListening(false); if (heard.trim() && !rec.cancelled) onEnd?.(heard) }

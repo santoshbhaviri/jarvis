@@ -12,7 +12,7 @@ export default function TabNav({ active, onChange, badges = {} }) {
             onClick={() => onChange(tab.key)}
             aria-current={active === tab.key ? 'page' : undefined}
           >
-            <span className={styles.icon}>{tab.icon}</span>
+            <tab.icon size={21} className={styles.icon} />
             <span className={styles.label}>{tab.label}</span>
             {badges[tab.key] > 0 && <span className={styles.badge} aria-label={`${badges[tab.key]} waiting`}>{badges[tab.key]}</span>}
           </button>

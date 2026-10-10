@@ -2,6 +2,7 @@
 // Edit one task (title, day, highlight, notes) or one habit (title, weekly goal)
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { X, Star, Briefcase, House, Trash2 } from 'lucide-react'
 import { todayStr } from '../lib/dateUtils'
 import styles from './EditTaskModal.module.css'
 
@@ -54,7 +55,7 @@ export default function EditTaskModal({ task, onClose, onSave, onDelete }) {
               <p className={styles.sub}>Carried over {task.postponed} day{task.postponed > 1 ? 's' : ''} so far</p>
             )}
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
 
         <div className={styles.body}>
@@ -90,18 +91,18 @@ export default function EditTaskModal({ task, onClose, onSave, onDelete }) {
                       <button type="button" aria-pressed={row.important}
                         className={`${styles.seg} ${row.important ? styles.segActive : ''}`}
                         onClick={() => set('important', !row.important)}
-                      >★ Important</button>
+                      ><Star size={14} />Important</button>
                     </div>
                   </div>
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Category</label>
                   <div className={styles.segmented}>
-                    {[['work', '💼 Work'], ['personal', '🏠 Personal']].map(([v, l]) => (
+                    {[['work', 'Work', Briefcase], ['personal', 'Personal', House]].map(([v, l, Icon]) => (
                       <button key={v} type="button"
                         className={`${styles.seg} ${row.category === v ? styles.segActive : ''}`}
                         onClick={() => set('category', v)}
-                      >{l}</button>
+                      ><Icon size={14} />{l}</button>
                     ))}
                   </div>
                 </div>
@@ -118,7 +119,7 @@ export default function EditTaskModal({ task, onClose, onSave, onDelete }) {
         <div className={styles.footer}>
           <button className={styles.cancelBtn} onClick={handleDelete}
             style={confirmDel ? { color: 'var(--danger)', borderColor: 'var(--danger)' } : undefined}>
-            {confirmDel ? 'Tap again to delete' : '🗑 Delete'}
+            {confirmDel ? 'Tap again to delete' : <><Trash2 size={15} />Delete</>}
           </button>
           <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
             {saving ? 'Saving…' : 'Save'}
