@@ -10,7 +10,9 @@ const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } cat
 
 export const loadCache = () => read(CACHE, null)
 export const saveCache = (tasks, rc) => write(CACHE, { tasks, rc })
-export const clearAll = () => { try { localStorage.removeItem(CACHE); localStorage.removeItem(OUT) } catch { /* ignore */ } }
+// On sign-in and sign-out: nothing personal stays on the phone (tasks, chat, searches)
+const PERSONAL = [CACHE, OUT, 'jarvis-chat', 'jarvis-searches', 'jarvis-memory', 'jarvis-input']
+export const clearAll = () => { try { PERSONAL.forEach(k => localStorage.removeItem(k)) } catch { /* ignore */ } }
 
 export const localId = () => 'local-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
 export const isLocal = (id) => typeof id === 'string' && id.startsWith('local-')

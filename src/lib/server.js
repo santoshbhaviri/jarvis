@@ -25,3 +25,7 @@ export const sendRequest  = (text) => call('jarvis-github', { method: 'POST', bo
 export const approveUpdate = (number) => call('jarvis-github', { method: 'POST', body: { action: 'approve', number } })
 export const changeUpdate = (number, text) => call('jarvis-github', { method: 'POST', body: { action: 'change', number, text } })
 export const dropUpdate   = (number) => call('jarvis-github', { method: 'POST', body: { action: 'drop', number } })
+
+// Search tab: headlines and Wikipedia (free, no key), then a short answer if Gemini is set up
+export const searchWeb    = (q) => call('jarvis-search', { query: `?q=${encodeURIComponent(q)}` })
+export const searchAnswer = (q, found) => call('jarvis-search', { method: 'POST', body: { q, news: found.news, wiki: found.wiki } })

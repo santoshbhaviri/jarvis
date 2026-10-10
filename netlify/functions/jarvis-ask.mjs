@@ -1,4 +1,4 @@
-// Answers questions inside Jarvis with Google Gemini (free tier).
+// The Assist tab: chat with Google Gemini (free tier) inside Jarvis.
 // Needs GEMINI_API_KEY in Netlify. Optional GEMINI_MODEL (default gemini-flash-latest).
 // The app sends what you said plus today's tasks; the answer can carry tasks to add,
 // a message to send or a number to call, which the app shows as buttons.
@@ -10,7 +10,7 @@ Answer the way a capable personal secretary would: direct, warm, and short. Lead
 When they ask you to write or polish a message, write the finished message in their voice (polite, clear, Indian English) in the answer and also in the message field so they can copy or send it.
 When they mention things they need to do, put clean, short task titles in the tasks field (with a date only if they gave one).
 When they ask you to call someone and give a number, put it in the call field.
-You cannot search the web. For live news, prices or weather, give what you know and say the "Search Google" link under your answer has the latest.
+You cannot search the web. For live news, prices or weather, give what you know and say the Search tab has the latest.
 You cannot operate their phone, change settings or send anything yourself; the app shows buttons they tap.`
 
 const SCHEMA = {

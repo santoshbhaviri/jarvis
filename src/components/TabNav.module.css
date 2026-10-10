@@ -5,38 +5,35 @@
 }
 .inner {
   max-width: 760px; margin: 0 auto;
-  padding: 10px 14px;
-  display: flex; gap: 8px;
-  overflow-x: auto; scrollbar-width: none;
+  padding: 8px 10px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
 }
-.inner::-webkit-scrollbar { display: none; }
 
+/* Six tabs fit a phone: icon over a short label */
 .tab {
-  flex: 1 1 0; min-width: 0; justify-content: center;
-  display: flex; align-items: center; gap: 5px;
-  padding: 7px 8px;
-  border-radius: 99px;
-  border: 1.5px solid var(--border2);
+  position: relative; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 2px 5px;
+  border-radius: 12px;
   background: transparent;
   color: var(--text2);
-  font-size: 12px; font-weight: 600;
-  white-space: nowrap;
-  transition: all 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
-.tab:hover:not(.active) { border-color: var(--accent1); color: var(--accent1); }
-
+.tab:hover:not(.active) { background: var(--surface2); }
 .active {
   background: var(--accent);
-  border-color: transparent;
   color: var(--on-accent);
-  box-shadow: var(--accent-glow);
 }
 
-.icon  { font-size: 14px; }
-.label { font-size: 12px; }
+.icon  { font-size: 17px; line-height: 1.2; }
+.label { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.badge {
+  position: absolute; top: 2px; right: calc(50% - 20px);
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px;
+  background: var(--missed); color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+}
 
 @media(min-width:640px){
-  .inner { padding: 12px 24px; gap: 10px; }
-  .tab   { flex: 0 0 auto; padding: 8px 18px; font-size: 13px; }
-  .label { font-size: 13px; }
+  .inner { padding: 10px 24px; gap: 8px; }
+  .label { font-size: 12.5px; }
 }

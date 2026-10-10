@@ -9,8 +9,9 @@ import TabNav        from './components/TabNav'
 import TodayTab      from './components/TodayTab'
 import TrackerTab    from './components/TrackerTab'
 import DoneTab       from './components/DoneTab'
-import JarvisButton  from './components/JarvisButton'
-import Updates       from './components/Updates'
+import SearchTab     from './components/SearchTab'
+import AssistTab     from './components/AssistTab'
+import EvolveTab     from './components/EvolveTab'
 import { isReady, listUpdates } from './lib/server'
 import EditTaskModal from './components/EditTaskModal'
 import InstallBanner from './components/InstallBanner'
@@ -31,10 +32,12 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
   const [activeTab, setActiveTab] = useState('today')
   const [editing, setEditing]     = useState(null)
   const [updates, setUpdates]     = useState(null)    // changes Claude built, waiting for you
-  const [showUpdates, setShowUpdates] = useState(false)
+  const [ghReady, setGhReady]     = useState(null)    // GitHub key added in Netlify
 
   const loadUpdates = useCallback(async () => {
-    if (!(await isReady('jarvis-github'))) return
+    const ok = await isReady('jarvis-github')
+    setGhReady(ok)
+    if (!ok) return
     const res = await listUpdates()
     if (!res.error) setUpdates(res)
   }, [])
@@ -49,9 +52,8 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
 
   return (
     <div className={styles.app}>
-      <Header isDark={isDark} onToggleTheme={onToggleTheme} reminders={reminders} onSignOut={onSignOut}
-        updates={updates ? waiting : null} onUpdates={() => { setShowUpdates(true); loadUpdates() }} />
-      <TabNav active={activeTab} onChange={setActiveTab} />
+      <Header isDark={isDark} onToggleTheme={onToggleTheme} reminders={reminders} onSignOut={onSignOut} />
+      <TabNav active={activeTab} onChange={setActiveTab} badges={{ evolve: waiting }} />
 
       <main className={styles.main}>
         {activeTab === 'today' && <InstallBanner />}
@@ -63,11 +65,11 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
 
         {activeTab === 'today'   && <TodayTab   taskData={taskData} onEdit={setEditing} />}
         {activeTab === 'tracker' && <TrackerTab taskData={taskData} onEdit={setEditing} />}
+        {activeTab === 'search'  && <SearchTab />}
+        {activeTab === 'assist'  && <AssistTab  taskData={taskData} />}
+        {activeTab === 'evolve'  && <EvolveTab  data={updates} ready={ghReady} onChanged={loadUpdates} />}
         {activeTab === 'done'    && <DoneTab    taskData={taskData} />}
       </main>
-
-      <JarvisButton taskData={taskData} />
-      {showUpdates && <Updates data={updates} onClose={() => setShowUpdates(false)} onChanged={loadUpdates} />}
 
       {editingTask && (
         <EditTaskModal

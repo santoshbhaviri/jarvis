@@ -3,12 +3,9 @@
 A dark-themed, mobile-first productivity app you install on your phone. Two goals: work on what matters most, and never lose track of anything.
 
 ## Features
-Three tabs, kept simple:
+Six tabs. Each has a box to type in; the 🎙 in the box lets you speak instead.
 
-- **🎙️ Jarvis button** (bottom right, on every screen): tap and speak or type. Jarvis works out what you meant:
-  - **Tasks**: "On 21st call the DEO and send the survey report, also book train tickets tomorrow" → three tasks, each on its day. Understands today, tomorrow, Friday, 15 Oct, on 21st, in 3 days, next week/month; "every day" makes a Tracker habit. Undo is one tap.
-  - **Questions**: "Latest news on Rythu Bharosa", "Polish this: …" → free answers from Google's AI Mode (or ChatGPT / Claude), or inside Jarvis once the free Gemini key is added (below).
-  - **App changes**: "Jarvis should show a weekly summary" → a request on GitHub; Claude builds it and sends a preview to approve.
+- **Add a task** (top of Today): "On 21st call the DEO and send the survey report, also book train tickets tomorrow" → three tasks, each on its day. Understands today, tomorrow, Friday, 15 Oct, on 21st, in 3 days, next week/month; "every day" makes a Tracker habit. Undo is one tap.
 - **Repeating tasks**: "Every Monday submit report", "pay rent on the 1st of every month", "every 3 days". Tick one and the next is added (shown as ↻ on the task).
 - **Follow-ups**: "Waiting for Collector's reply" comes back in 3 days (⏳) unless you give a day.
 - **☀️ Today**: the card at the top shows the one thing to do **next** (Done / Later); the rest of today is below. Tap ☆ to highlight the important ones, which stay at the top. Tick a task when it is done.
@@ -17,6 +14,9 @@ Three tabs, kept simple:
   - After 8 pm an **evening wrap-up** lists what's left: done, tomorrow or drop, or all to tomorrow in one tap.
 - **Works offline**: Jarvis opens with no signal; tasks you add or tick wait on the phone and sync when you're back online.
 - **🔁 Tracker**: habits you want to keep up every day or a few times a week (gym, walk, reading). Tick today with one tap, see this week and this month at a glance (e.g. "Gym 3/4 this week · 11/17 this month"), and open the month calendar to fill in past days.
+- **🔍 Search**: the latest Google News headlines (India) and a Wikipedia summary, right in the app, free with no key. With the free Gemini key (below) a short answer written from them appears on top. **Google ↗** opens the full Google search.
+- **💬 Assist**: chat like ChatGPT or Gemini. It knows today's tasks, plans your day, writes and polishes letters and messages (send by WhatsApp, SMS or email in one tap), turns what you say into tasks (+ Add) and dials numbers. Needs the free Gemini key; without it the question opens in ChatGPT or Claude. The chat stays on the phone until **New chat** or sign-out.
+- **✨ Evolve**: tell Jarvis what it should do better ("show a weekly summary every Sunday"). Claude builds it every morning; it shows here under **Ready to try** with **Try it**, **Approve** (puts it live), **Change** and **Drop**. Also lists what is being built and what was added lately. The number on the tab is how many are waiting for you.
 - **✅ Done**: everything you finished, grouped by day. Tasks stay here for **30 days** and are then deleted automatically. Tap ↩ Restore to bring one back to today.
 - **Reminders**: 🔔 in the header turns on a morning summary notification (today's tasks, important ones, carried over).
 - **Login**: each account sees only its own tasks.
@@ -96,15 +96,14 @@ All keys go in one place: Netlify → your site → **Site configuration → Env
 | Variable | What it switches on | Where to get it |
 |---|---|---|
 | `JARVIS_OWNER_EMAIL` | Only your account can use the two below | Your Jarvis login email |
-| `GEMINI_API_KEY` | Answers appear inside Jarvis | https://aistudio.google.com/apikey → **Create API key** (free, no card). Google's free tier has daily limits and may use what you send to improve its products, so don't send confidential office details. |
-| `GITHUB_TOKEN` | App requests go straight from Jarvis to Claude, and ✨ Updates shows what Claude built for you to try, approve (puts it live), change or drop | GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate. Repository access: only `jarvis`. Permissions: Contents, Issues, Pull requests = Read and write. |
+| `GEMINI_API_KEY` | Assist chats inside Jarvis; Search adds a short answer on top of the headlines | https://aistudio.google.com/apikey → **Create API key** (free, no card). Google's free tier has daily limits and may use what you send to improve its products, so don't send confidential office details. |
+| `GITHUB_TOKEN` | Evolve sends requests straight to Claude and shows what Claude built for you to try, approve (puts it live), change or drop | GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate. Repository access: only `jarvis`. Permissions: Contents, Issues, Pull requests = Read and write. |
 
-Optional: `GEMINI_MODEL` picks another Gemini model (default `gemini-flash-latest`). Gemini's free tier can't search the web, so live news still goes to Google.
+Optional: `GEMINI_MODEL` picks another Gemini model (default `gemini-flash-latest`). Gemini's free tier can't search Google itself, so the Search tab fetches Google News and Wikipedia first and hands them to Gemini.
 
 ### How Jarvis learns
-- When you correct Jarvis (tap Task / Ask / Improve app yourself), it remembers how that sentence started and gets it right next time.
-- Tasks you add on several days show up as one-tap suggestions when you open the Jarvis button.
-- Bigger changes come from you: say "Jarvis should …". Claude builds it every morning; it appears under ✨ Updates to try, and **Approve** puts it live.
+- Tasks you add on several days show up as one-tap suggestions when you tap the Add a task box.
+- Bigger changes come from you, in the ✨ Evolve tab. Claude builds them every morning; they appear there to try, and **Approve** puts one live.
 
 Jarvis can open WhatsApp, SMS, email or the dialer with the text ready, but you always tap Send yourself; it cannot operate other apps or phone settings.
 

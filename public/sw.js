@@ -1,5 +1,5 @@
 // public/sw.js — offline shell + push reminders
-const CACHE = 'jarvis-v5'
+const CACHE = 'jarvis-v6'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/', '/manifest.webmanifest', '/icon-192.png', '/apple-touch-icon.png'])))

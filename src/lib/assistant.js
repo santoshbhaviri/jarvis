@@ -1,26 +1,8 @@
-// What the Jarvis button should do with what you said:
-//   'task'    → add it to your list (one sentence can hold several tasks)
-//   'ask'     → a question, a search, or a message to write
-//   'improve' → a change to the Jarvis app itself (sent to GitHub, Claude builds it)
+// Helpers for the Search, Assist and Evolve tabs: today's tasks as context for a question,
+// and links that open a question in Google, ChatGPT or Claude, or a change request on GitHub.
 import { format } from 'date-fns'
 import { todayStr } from './dateUtils'
 import { REPO_URL } from './constants'
-
-const IMPROVE = /^(?:(?:hey |ok )?jarvis[,.]?\s*)?(?:please\s+)?(?:improve|upgrade|change|update|redesign|fix)\s+(?:the |my )?(?:app|jarvis)\b|\b(?:the app|jarvis|this app) should\b|\b(?:add|build|make|create) (?:a |an |one )?(?:new )?(?:feature|button|tab|screen|page|option|setting)\b|^(?:improve|feature|app)\s*[:-]/i
-const ASK = /\?\s*$|^(?:(?:hey |ok )?jarvis[,.]?\s*)?(?:please\s+)?(?:what|who|whom|whose|why|how|when|where|which|is|are|was|were|does|did|can|could|should|would|tell me|explain|search|google|find out|look up|show me|give me|suggest|recommend|polish|rewrite|rephrase|(?:write|draft|compose)\s+(?:me\s+)?(?:a|an)?\s*(?:message|mail|email|letter|reply|note|whatsapp|sms|post|speech|wish)|translate|summari[sz]e|define|meaning of|news|latest|weather|calculate|compare)\b/i
-
-const TASK = /\b(?:remind me|add (?:a |new )?(?:task|reminder)|(?:i|we) (?:need|have|want|got) to|don't forget|note down)\b/i
-
-export function classify(text) {
-  const s = text.trim()
-  // Say the kind first to be sure: "Task: …", "Search: …" / "Ask: …", "Improve: …"
-  if (/^(?:task|todo|to-do|remind(?:er)?)\s*[:,-]/i.test(s)) return 'task'
-  if (/^(?:ask|search|google|question)\s*[:,-]/i.test(s)) return 'ask'
-  if (IMPROVE.test(s)) return 'improve'
-  if (TASK.test(s) && !/\?\s*$/.test(s)) return 'task'
-  if (ASK.test(s)) return 'ask'
-  return 'task'
-}
 
 // What Jarvis knows about your day, sent along with a question
 export function dayContext(tasks, isRoutineDone) {
@@ -51,6 +33,6 @@ export const claudeLink  = (q, ctx) => `https://claude.ai/new?q=${encodeURICompo
 export function improveLink(idea) {
   const q = idea.trim()
   const title = q.length > 70 ? q.slice(0, 67) + '…' : q
-  const body = `${q}\n\n---\nSent from the Jarvis button. Claude: please build this, open a pull request with a preview link, and comment here.`
+  const body = `${q}\n\n---\nSent from Jarvis. Claude: please build this, open a pull request with a preview link, and comment here.`
   return `${REPO_URL}/issues/new?title=${encodeURIComponent('[Jarvis] ' + title)}&body=${encodeURIComponent(body)}`
 }

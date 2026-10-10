@@ -1,6 +1,9 @@
 export const TABS = [
   { key: 'today',   label: 'Today',   icon: '☀️' },
   { key: 'tracker', label: 'Tracker', icon: '🔁' },
+  { key: 'search',  label: 'Search',  icon: '🔍' },
+  { key: 'assist',  label: 'Assist',  icon: '💬' },
+  { key: 'evolve',  label: 'Evolve',  icon: '✨' },
   { key: 'done',    label: 'Done',    icon: '✅' },
 ]
 

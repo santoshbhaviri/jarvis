@@ -2,7 +2,7 @@
 import toast from 'react-hot-toast'
 import styles from './Header.module.css'
 
-export default function Header({ isDark, onToggleTheme, reminders, onSignOut, updates, onUpdates }) {
+export default function Header({ isDark, onToggleTheme, reminders, onSignOut }) {
   const bell = async () => {
     if (reminders.permission === 'granted') {
       toast(reminders.pushConfigured
@@ -30,12 +30,6 @@ export default function Header({ isDark, onToggleTheme, reminders, onSignOut, up
 
         {/* Right side: reminders, theme, sign out */}
         <div className={styles.right}>
-          {updates !== null && (
-            <button className={styles.iconBtn} onClick={onUpdates} aria-label={`Updates, ${updates} waiting`} title="Updates">
-              ✨{updates > 0 && <span className={styles.badge}>{updates}</span>}
-            </button>
-          )}
-
           <button
             className={styles.iconBtn}
             onClick={bell}

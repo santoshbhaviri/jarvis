@@ -1,6 +1,6 @@
 // Lets Jarvis change itself without leaving the app:
 //   POST {action:'request', text}   → a new "[Jarvis] …" request on GitHub; Claude builds it
-//   GET                             → your requests and the updates waiting for you
+//   GET                             → updates waiting for you, requests being built, and what went live lately
 //   POST {action:'approve', number} → you approved it in the app: puts it live (merges; Netlify redeploys)
 //   POST {action:'change', number, text} → asks Claude to change that update
 //   POST {action:'drop', number}    → throws that update away
@@ -47,9 +47,11 @@ export default async (req) => {
 
   try {
     if (req.method === 'GET') {
-      const [issues, pulls] = await Promise.all([
+      const month = new Date(Date.now() - 30 * 864e5).toISOString()
+      const [issues, pulls, closed] = await Promise.all([
         gh(`/repos/${REPO}/issues?state=open&per_page=30`),
         gh(`/repos/${REPO}/pulls?state=open&per_page=30`),
+        gh(`/repos/${REPO}/issues?state=closed&since=${month}&per_page=30`),
       ])
       const updates = pulls.map(p => ({
         number: p.number,
@@ -64,7 +66,11 @@ export default async (req) => {
         .filter(i => !i.pull_request && /^\[Jarvis\]/.test(i.title))
         .filter(i => !pulls.some(p => new RegExp(`#${i.number}\\b`).test(p.body || '')))
         .map(i => ({ number: i.number, title: i.title.replace(/^\[Jarvis\]\s*/, ''), asked: i.created_at }))
-      return json({ updates, building })
+      // Requests that went live in the last 30 days
+      const done = closed
+        .filter(i => !i.pull_request && /^\[Jarvis\]/.test(i.title) && i.state_reason === 'completed')
+        .map(i => ({ number: i.number, title: i.title.replace(/^\[Jarvis\]\s*/, ''), closed: i.closed_at }))
+      return json({ updates, building, done })
     }
 
     const { action, text = '', number } = await req.json()

@@ -85,9 +85,3 @@
 }
 .iconBtn:hover { border-color: var(--border2); }
 @media (max-width: 420px) { .themeLabel, .date { display: none; } .right { gap: 6px; } }
-.iconBtn { position: relative; }
-.badge {
-  position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px;
-  border-radius: 99px; background: var(--accent); color: var(--on-accent);
-  font-size: 10px; font-weight: 700; line-height: 17px; text-align: center;
-}

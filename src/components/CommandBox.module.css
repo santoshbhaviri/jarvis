@@ -1,0 +1,23 @@
+.box {
+  display: flex; align-items: flex-end; gap: 6px;
+  padding: 6px 6px 6px 14px;
+  background: var(--surface); border: 1.5px solid var(--border2);
+  border-radius: 24px; box-shadow: var(--shadow);
+}
+.box:focus-within, .listening { border-color: var(--accent); }
+.input {
+  flex: 1; min-width: 0; resize: none; align-self: center;
+  padding: 8px 0; font-size: 16px; line-height: 1.4;
+  background: none; color: var(--text); border: 0; outline: none;
+}
+.input::placeholder { color: var(--text3); }
+.mic, .send {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.mic { background: none; color: var(--text2); }
+.micOn { background: var(--accent-soft); color: var(--accent); animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .micOn { animation: none; } }
+.send { background: var(--accent); color: var(--on-accent); }
+.send:disabled { background: var(--surface3); color: var(--text3); }
