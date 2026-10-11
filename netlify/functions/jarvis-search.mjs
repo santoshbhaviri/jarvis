@@ -2,7 +2,7 @@
 //   GET ?q=…                 → latest Google News headlines and a Wikipedia summary
 //   POST {q, news, wiki}     → a short answer written from those by Gemini (needs GEMINI_API_KEY)
 // Gemini's free tier can't search Google itself, so Jarvis fetches the news first and hands it over.
-import { env, json, owner, geminiKey, geminiProblem } from '../lib/common.mjs'
+import { env, json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
 
 const UA = 'Jarvis personal assistant (https://github.com/santoshbhaviri/jarvis)'
 const STOP = new Set('what who whom whose why how when where which is are was were the a an of in on for to and or about latest news today update updates tell me give show find search please jarvis does did can could should would'.split(' '))
@@ -67,17 +67,13 @@ export default async (req) => {
     w ? `Wikipedia, "${w.title}": ${String(w.extract).slice(0, 1500)}` : '',
   ].filter(Boolean).join('\n\n')
 
-  const model = env('GEMINI_MODEL') || 'gemini-flash-latest'
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
-      contents: [{ role: 'user', parts: [{ text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` }] }],
-      generationConfig: { maxOutputTokens: 4096 },
-    }),
+  const res = await askGemini(key, {
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{ role: 'user', parts: [{ text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` }] }],
+    generationConfig: { maxOutputTokens: 4096 },
   })
-  if (res.status === 429) return json({ error: 'busy' }, 429)
+  if (!res || res.status >= 500) return json({ error: 'busy', why: GEMINI_BUSY }, 503)
+  if (res.status === 429) return json({ error: 'busy', why: GEMINI_LIMIT }, 429)
   if (!res.ok) {
     const problem = geminiProblem(await res.text())
     return json({ error: problem ? 'bad_key' : 'api', why: problem }, 502)

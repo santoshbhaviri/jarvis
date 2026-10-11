@@ -14,5 +14,12 @@ export const CATEGORIES = {
   personal: { label: 'Personal', icon: House,     color: 'var(--text2)' },
 }
 
+// The real Jarvis. Update previews ("Try it") live at deploy-preview-N--drjarvis.netlify.app
+export const HOME = 'drjarvis.netlify.app'
+export const isTestCopy = typeof location !== 'undefined' && /^deploy-preview-\d+--/.test(location.hostname)
+
+// Built at (from the build id, a base-36 timestamp)
+export const BUILT = new Date(parseInt(__BUILD__, 36))
+
 // Where Jarvis's code lives; "Improve Jarvis" requests become issues here
 export const REPO_URL = 'https://github.com/santoshbhaviri/jarvis'

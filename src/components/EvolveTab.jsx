@@ -38,7 +38,7 @@ export default function EvolveTab({ data, ready, onChanged }) {
 
   return (
     <div className={styles.tab}>
-      <CommandBox value={text} onChange={setText} onSubmit={send} busy={busy} voiceSubmits={false}
+      <CommandBox value={text} onChange={setText} onSubmit={send} busy={busy}
         placeholder="What should Jarvis do better?" label="Change request" />
       {(ready === false || checking) && <SetupCheck />}
 

@@ -1,6 +1,6 @@
 // Setup check: says in plain words whether each key in Netlify works, and how to fix it.
 // It never shows a key. GET → { checks: [{ name, ok, fix }] }
-import { env, json, signedIn, looksLike, geminiKey, geminiProblem, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
+import { env, json, signedIn, looksLike, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
 
 const REPO = env('JARVIS_REPO') || 'santoshbhaviri/jarvis'
 const REACH = (who) => `Couldn't reach ${who} just now. Try again in a minute.`
@@ -22,14 +22,13 @@ async function gemini() {
   const { key, why } = geminiKey()
   if (why) return { name, ok: false, fix: why + ' Paste the Gemini key there instead.' }
   if (!key) return { name, ok: false, fix: 'Add GEMINI_API_KEY in Netlify: a free key from aistudio.google.com/apikey.' }
-  try {
-    // Listing models costs nothing and checks the key the same way a question would
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1', {
-      headers: { 'x-goog-api-key': key }, signal: AbortSignal.timeout(6000),
-    })
-    if (res.ok) return { name, ok: true }
-    return { name, ok: false, fix: geminiProblem(await res.text()) || `Google answered with error ${res.status}. Try again in a minute.` }
-  } catch { return { name, ok: false, fix: REACH('Google') } }
+  // Ask a one-word question the way Assist does, so "works" here means Assist can answer
+  const res = await askGemini(key, { contents: [{ role: 'user', parts: [{ text: 'Reply with the word OK.' }] }] }, 15000)
+  if (res?.ok) return { name, ok: true }
+  if (!res || res.status >= 500) return { name, ok: false, fix: 'The key is fine. ' + GEMINI_BUSY }
+  if (res.status === 429) return { name, ok: false, fix: 'The key is fine. ' + GEMINI_LIMIT }
+  if (res.status === 404) return { name, ok: false, fix: "Google doesn't offer its Flash models to this key just now. Try again later." }
+  return { name, ok: false, fix: geminiProblem(await res.text()) || `Google answered with error ${res.status}. Try again in a minute.` }
 }
 
 async function github() {
@@ -45,6 +44,15 @@ async function github() {
     })
     if (res.status === 401) return { name, ok: false, fix: GITHUB_BAD }
     if (!res.ok) return { name, ok: false, fix: GITHUB_NO_ACCESS }
+    // Evolve's Send makes an issue. An empty one is refused as incomplete (422) when the key may
+    // write issues and as forbidden (403) when it may not, so nothing is ever created here.
+    const probe = await fetch(`https://api.github.com/repos/${REPO}/issues`, {
+      method: 'POST', body: '{}',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'jarvis-app' },
+      signal: AbortSignal.timeout(6000),
+    })
+    if (probe.status === 410) return { name, ok: false, fix: 'Issues are switched off for the jarvis repository. On GitHub open jarvis, Settings, and tick Issues.' }
+    if (probe.status === 403 || probe.status === 404) return { name, ok: false, fix: GITHUB_NO_ACCESS }
     return { name, ok: true }
   } catch { return { name, ok: false, fix: REACH('GitHub') } }
 }

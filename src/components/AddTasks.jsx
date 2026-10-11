@@ -1,4 +1,4 @@
-// Add tasks by typing or speaking. One sentence can hold several tasks, each on its own day:
+// Add tasks by typing (or the keyboard's mic). One sentence can hold several tasks, each on its own day:
 // "Call DEO tomorrow and send the survey report on 21st" → two tasks.
 import { useState, useCallback } from 'react'
 import toast from 'react-hot-toast'

@@ -45,6 +45,36 @@ export function geminiKey() {
   return { key }
 }
 
+// Search, Assist and the Setup check ask Gemini through here: the fast Flash-Lite first, then
+// Flash. Google often answers 503 (overloaded), 429 (free limit) or 500 for one model while
+// the other is fine, so those, a missing model (404) and a slow answer move on to the next.
+// Netlify stops a function after about 30 seconds, so all tries together stay under that.
+// Returns Google's last answer, or null when none came in time.
+const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/models'
+const TRY_NEXT = [404, 429, 500, 503]
+export async function askGemini(key, body, within = 24000) {
+  const models = [...new Set([env('GEMINI_MODEL'), 'gemini-flash-lite-latest', 'gemini-flash-latest'].filter(Boolean))]
+  const end = Date.now() + within
+  let res = null
+  for (const [i, model] of models.entries()) {
+    const left = end - Date.now()
+    if (left < 2000) break
+    try {
+      res = await fetch(`${GEMINI}/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify(body),
+        // Leave the next model time to answer if this one hangs
+        signal: AbortSignal.timeout(i < models.length - 1 ? Math.min(left, 10000) : left),
+      })
+    } catch { res = null; continue }
+    if (!TRY_NEXT.includes(res.status)) break
+  }
+  return res
+}
+export const GEMINI_BUSY = "Google's free AI is busy just now. Try again in a minute."
+export const GEMINI_LIMIT = "Google's free limit is used up for now. Try again later (it resets daily)."
+
 // Google's reason for refusing a Gemini call, in plain words ('' when it isn't about the key)
 export function geminiProblem(detail) {
   const d = String(detail || '')
