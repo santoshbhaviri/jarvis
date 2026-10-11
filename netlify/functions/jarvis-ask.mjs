@@ -2,7 +2,7 @@
 // Needs GEMINI_API_KEY in Netlify. Optional GEMINI_MODEL (default gemini-flash-latest).
 // The app sends what you said plus today's tasks; the answer can carry tasks to add,
 // a message to send or a number to call, which the app shows as buttons.
-import { env, json, owner } from '../lib/common.mjs'
+import { env, json, owner, geminiKey, geminiProblem } from '../lib/common.mjs'
 
 const SYSTEM = `You are Jarvis, a personal assistant inside a phone app used by a senior government officer in Telangana, India.
 They speak to you by voice, so their words may contain small transcription mistakes; read for meaning.
@@ -42,8 +42,9 @@ const SCHEMA = {
 }
 
 export default async (req) => {
-  const key = env('GEMINI_API_KEY')
-  if (req.method === 'GET') return json({ ready: !!key })
+  const { key, why } = geminiKey()
+  if (req.method === 'GET') return json({ ready: !!env('GEMINI_API_KEY') })
+  if (why) return json({ error: 'bad_key', why }, 503)
   if (!key) return json({ error: 'not_configured' }, 503)
   if (!(await owner(req))) return json({ error: 'not_signed_in' }, 401)
 
@@ -63,13 +64,13 @@ export default async (req) => {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents,
-      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, maxOutputTokens: 2048 },
+      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, maxOutputTokens: 8192 },
     }),
   })
   if (res.status === 429) return json({ error: 'busy' }, 429)
   if (!res.ok) {
-    const detail = await res.text()
-    return json({ error: /API key|PERMISSION|UNAUTHENTICATED/i.test(detail) ? 'bad_key' : 'api', detail }, 502)
+    const problem = geminiProblem(await res.text())
+    return json({ error: problem ? 'bad_key' : 'api', why: problem || `Gemini answered with error ${res.status}. Try again in a minute.` }, 502)
   }
   const data = await res.json()
   const raw = data.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('') ?? ''

@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { formatDistanceToNowStrict } from 'date-fns'
-import { Check, ArrowUpRight } from 'lucide-react'
+import { Check, ArrowUpRight, Wrench } from 'lucide-react'
 import { sendRequest, approveUpdate, changeUpdate, dropUpdate } from '../lib/server'
-import { improveLink } from '../lib/assistant'
 import CommandBox from './CommandBox'
 import SectionHeader from './SectionHeader'
+import SetupCheck from './SetupCheck'
 import styles from './EvolveTab.module.css'
 
 const ago = (d) => { try { return formatDistanceToNowStrict(new Date(d), { addSuffix: true }) } catch { return '' } }
@@ -16,19 +16,19 @@ export default function EvolveTab({ data, ready, onChanged }) {
   const { updates = [], building = [], done = [] } = data || {}
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [checking, setChecking] = useState(false)
 
   useEffect(() => { onChanged() }, [onChanged])   // fresh list each time you open the tab
 
   const send = async (said) => {
-    if (!ready) {   // GitHub key not added yet: the request opens on GitHub, tap Create there
-      window.open(improveLink(said), '_blank', 'noopener')
-      setText('')
+    if (!ready) {   // GitHub key not working yet: keep the words, the Setup check says what to fix
+      toast('Evolve needs the GitHub key first. The Setup check below says what to fix.', { duration: 5000 })
       return
     }
     setBusy(true)
     const res = await sendRequest(said)
     setBusy(false)
-    if (res.error) { toast.error('Could not send. Try again.'); return }
+    if (res.error) { toast.error(res.why || 'Could not send. Try again.', { duration: 6000 }); if (res.why) setChecking(true); return }
     setText('')
     toast.success('Sent to Claude. It shows up here to try, usually by next morning.', { duration: 5000 })
     onChanged()
@@ -40,7 +40,7 @@ export default function EvolveTab({ data, ready, onChanged }) {
     <div className={styles.tab}>
       <CommandBox value={text} onChange={setText} onSubmit={send} busy={busy} voiceSubmits={false}
         placeholder="What should Jarvis do better?" label="Change request" />
-      {ready === false && <p className={styles.note}>Requests open on GitHub until GITHUB_TOKEN is added in Netlify.</p>}
+      {(ready === false || checking) && <SetupCheck />}
 
       {updates.length > 0 && (
         <section>
@@ -65,6 +65,7 @@ export default function EvolveTab({ data, ready, onChanged }) {
         </section>
       )}
       {ready && empty && <p className={styles.note}>Your ideas show up here while Claude builds them.</p>}
+      {ready && !checking && <button className={styles.check} onClick={() => setChecking(true)}><Wrench size={14} />Check setup</button>}
     </div>
   )
 }
@@ -79,7 +80,7 @@ function Update({ u, onChanged }) {
     const res = await fn()
     setBusy(false)
     if (res.error) {
-      toast.error(res.error === 'not_mergeable' ? 'This one needs fixing first. Tap Change and say what you saw.' : 'Could not reach GitHub. Try again.')
+      toast.error(res.error === 'not_mergeable' ? 'This one needs fixing first. Tap Change and say what you saw.' : res.why || 'Could not reach GitHub. Try again.', { duration: 6000 })
       return
     }
     toast.success(done)
