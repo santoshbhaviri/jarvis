@@ -1,18 +1,24 @@
 // Assist: chat with Jarvis like ChatGPT or Gemini. It knows today's tasks, writes and polishes
 // messages (send by WhatsApp, SMS or email), turns what you say into tasks, and can dial a number.
+// It knows GST law and drafts notices, orders and replies, and reads your Memory before answering;
+// "remember …" saves a note there straight away.
 // Runs on the free Gemini key in Netlify; without it, your question opens in ChatGPT or Claude.
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
-import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen } from 'lucide-react'
-import { askJarvis, isReady } from '../lib/server'
+import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen, BookMarked } from 'lucide-react'
+import { askJarvis, isReady, addMemory } from '../lib/server'
 import { dayContext, chatgptLink, claudeLink, googleLink } from '../lib/assistant'
 import { todayStr } from '../lib/dateUtils'
 import CommandBox from './CommandBox'
+import MemoryPanel from './MemoryPanel'
+import SaveButton from './SaveButton'
 import styles from './AssistTab.module.css'
 
 const CHAT = 'jarvis-chat'
-const IDEAS = ['Plan my day', "What's pending this week?", 'Draft a leave letter for 2 days']
+const IDEAS = ['Plan my day', "What's pending this week?", 'Explain section 74 of CGST Act', 'What can you do?']
+// "Remember that …" saves to Memory; "remember to …" is a task, and a question is a question
+const REMEMBER = /^(?:please\s+|jarvis[,\s]+)*remember(?:\s+that)?\b[\s:,-]*/i
 const ERRORS = {
   busy: 'Too many questions in a short time. Try again in a minute.',
   bad_key: 'The Gemini key in Netlify was not accepted. Check GEMINI_API_KEY.',
@@ -29,6 +35,7 @@ export default function AssistTab({ taskData }) {
   const [text, setText]       = useState('')
   const [waiting, setWaiting] = useState(false)
   const [asked, setAsked]     = useState(null)       // without the key: the question to open elsewhere
+  const [memory, setMemory]   = useState(false)      // showing Memory instead of the chat
   const endRef = useRef(null)
   const ctx = dayContext(tasks, isRoutineDone)
 
@@ -38,25 +45,44 @@ export default function AssistTab({ taskData }) {
 
   const ask = async (said) => {
     setText('')
+    const lead = said.match(REMEMBER)?.[0]
+    const note = lead && said.slice(lead.length).trim()
+    if (note && !/^to\b/i.test(note) && !note.endsWith('?')) {
+      setTurns(prev => [...prev, { role: 'user', text: said }]); setWaiting(true)
+      const res = await addMemory(note, 'you')
+      setWaiting(false)
+      setTurns(prev => [...prev, res.error
+        ? { role: 'assistant', text: res.why || 'Could not save that. Try again.', error: true }
+        : { role: 'assistant', text: "Saved to Memory. I'll keep it in mind.", saved: true }])
+      return
+    }
     const ok = inApp ?? await isReady('jarvis-ask')
     if (!ok) { setAsked(said); return }
     const next = [...turns, { role: 'user', text: said }]
     setTurns(next); setWaiting(true)
-    const res = await askJarvis(next.filter(t => !t.error).slice(-10).map(({ role, text }) => ({ role, text })), ctx)
+    // A draft sits in its own card, so it goes back with the answer for "make it shorter"
+    const history = next.filter(t => !t.error).slice(-10)
+      .map(({ role, text, actions }) => ({ role, text: actions?.message?.text ? `${text}\n\n${actions.message.text}` : text }))
+    const res = await askJarvis(history, ctx)
     setWaiting(false)
     setTurns(prev => [...prev, res.error
       ? { role: 'assistant', text: res.why || ERRORS[res.error] || 'Something went wrong. Please try again.', error: true }
       : { role: 'assistant', text: res.text, actions: res.actions }])
   }
 
+  if (memory) return <div className={styles.tab}><MemoryPanel onBack={() => setMemory(false)} /></div>
+
   return (
     <div className={styles.tab}>
+      <div className={styles.bar}>
+        <button className={styles.fresh} onClick={() => setMemory(true)}><BookMarked size={15} />Memory</button>
+        {turns.length > 0 && <button className={styles.fresh} onClick={() => setTurns([])}><SquarePen size={15} />New chat</button>}
+      </div>
       {turns.length > 0 && (
         <div className={styles.thread}>
-          <button className={styles.fresh} onClick={() => setTurns([])}><SquarePen size={15} />New chat</button>
           {turns.map((t, i) => t.role === 'user'
             ? <div key={i} className={styles.me}>{t.text}</div>
-            : <Answer key={i} turn={t} addTask={addTask} />)}
+            : <Answer key={i} turn={t} q={turns[i - 1]?.text} addTask={addTask} />)}
           {waiting && <div className={`${styles.them} ${styles.thinking}`}>Thinking…</div>}
         </div>
       )}
@@ -87,7 +113,7 @@ export default function AssistTab({ taskData }) {
   )
 }
 
-function Answer({ turn, addTask }) {
+function Answer({ turn, q = '', addTask }) {
   const [added, setAdded] = useState({})
   const a = turn.actions
   const speak = () => {
@@ -108,12 +134,15 @@ function Answer({ turn, addTask }) {
   return (
     <div className={`${styles.them} ${turn.error ? styles.err : ''}`}>
       <div className={styles.text}>{turn.text}</div>
-      {!turn.error && (
+      {!turn.error && !turn.saved && (
         <div className={styles.tools}>
           <button onClick={speak} aria-label="Read aloud"><Volume2 size={16} /></button>
           <button onClick={() => copy(turn.text)} aria-label="Copy answer"><Copy size={15} /></button>
+          <SaveButton from="assist" title={q.slice(0, 120)}
+            text={a?.message?.text ? `${turn.text}\n\n${a.message.text}` : turn.text} />
         </div>
       )}
+      {a?.remember && <RememberCard note={a.remember} />}
       {a?.tasks?.length > 0 && (
         <div className={styles.card}>
           {a.tasks.map((t, i) => (
@@ -126,6 +155,25 @@ function Answer({ turn, addTask }) {
       )}
       {a?.message && <MessageCard m={a.message} copy={copy} />}
       {a?.call && <a className={styles.small} href={`tel:${a.call.replace(/[^\d+]/g, '')}`}><Phone size={14} />Call {a.call}</a>}
+    </div>
+  )
+}
+
+// Jarvis heard a lasting preference or fact: one tap keeps it in Memory
+function RememberCard({ note }) {
+  const [state, setState] = useState('')
+  const save = async () => {
+    setState('saving')
+    const res = await addMemory(note, 'assist')
+    if (res.error) { setState(''); toast.error(res.why || 'Could not save. Try again.'); return }
+    setState('saved')
+  }
+  return (
+    <div className={styles.card}>
+      <div className={styles.taskRow}>
+        <span><small>Remember this? </small>{note}</span>
+        <button className={styles.small} disabled={!!state} onClick={save}>{state === 'saved' ? <Check size={14} /> : 'Save'}</button>
+      </div>
     </div>
   )
 }

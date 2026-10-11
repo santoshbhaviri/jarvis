@@ -31,3 +31,11 @@ export const dropUpdate   = (number) => call('jarvis-github', { method: 'POST', 
 // turns carries the conversation for a follow-up question.
 export const searchWeb    = (q) => call('jarvis-search', { query: `?q=${encodeURIComponent(q)}` })
 export const searchAnswer = (q, found, turns) => call('jarvis-search', { method: 'POST', body: { q, news: found.news, wiki: found.wiki, turns } })
+
+// Memory: notes, preferences, saved answers and documents that Search and Assist use
+export const listMemory   = () => call('jarvis-memory')
+export const addMemory    = (text, from = 'you', title) => call('jarvis-memory', { method: 'POST', body: { text, from, title } })
+export const deleteMemory = (id) => call('jarvis-memory', { method: 'POST', body: { action: 'delete', id } })
+export const readDocument = (file) => call('jarvis-memory', { method: 'POST', body: { action: 'read', ...file } })
+// Takes one of Claude's replies off Evolve (it stays on GitHub)
+export const hideReply    = (id) => call('jarvis-memory', { method: 'POST', body: { action: 'hide', id } })

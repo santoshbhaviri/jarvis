@@ -9,6 +9,7 @@ import { Volume2, Copy, ArrowUpRight, Sparkles, Clock, SquarePen } from 'lucide-
 import { searchWeb, searchAnswer } from '../lib/server'
 import { googleLink } from '../lib/assistant'
 import CommandBox from './CommandBox'
+import SaveButton from './SaveButton'
 import styles from './SearchTab.module.css'
 
 const RECENT = 'jarvis-searches'
@@ -103,6 +104,7 @@ export default function SearchTab() {
                     <div className={styles.tools}>
                       <button onClick={() => speak(res.answer)} aria-label="Read aloud"><Volume2 size={16} /></button>
                       <button onClick={() => copy(res.answer)} aria-label="Copy answer"><Copy size={15} /></button>
+                      <SaveButton key={res.q} text={res.answer} from="search" title={res.q.slice(0, 120)} />
                     </div>
                   </>
                 : <p className={styles.muted}>Thinking…</p>}
@@ -123,6 +125,7 @@ export default function SearchTab() {
                           <div className={styles.tools}>
                             <button onClick={() => speak(m.answer)} aria-label="Read aloud"><Volume2 size={16} /></button>
                             <button onClick={() => copy(m.answer)} aria-label="Copy answer"><Copy size={15} /></button>
+                            <SaveButton text={m.answer} from="search" title={m.q.slice(0, 120)} />
                           </div>
                         </>
                       : <p className={styles.muted}>Thinking…</p>}

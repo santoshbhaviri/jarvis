@@ -37,4 +37,7 @@
 .replyText { display: flex; gap: 9px; align-items: flex-start; }
 .replyText svg { flex-shrink: 0; margin-top: 4px; color: var(--star-text); }
 .replyText p { font-size: 15px; line-height: 1.55; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.replyFoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.replyFoot span { display: flex; gap: 6px; }
+.replyFoot .btn { padding: 6px 12px; gap: 5px; }
 .reply small { color: var(--text3); font-size: 12px; }

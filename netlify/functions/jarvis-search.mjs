@@ -1,8 +1,10 @@
 // The Search tab. Free, no key needed:
 //   GET ?q=…                 → latest Google News headlines and a Wikipedia summary
-//   POST {q, news, wiki}     → a short answer written from those by Gemini (needs GEMINI_API_KEY)
+//   POST {q, news, wiki}     → a short answer written from those by Gemini (needs GEMINI_API_KEY),
+//                              with your Memory in mind
 // Gemini's free tier can't search Google itself, so Jarvis fetches the news first and hands it over.
 import { env, json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
+import { memoryFor } from '../lib/memory.mjs'
 
 const UA = 'Jarvis personal assistant (https://github.com/santoshbhaviri/jarvis)'
 const STOP = new Set('what who whom whose why how when where which is are was were the a an of in on for to and or about latest news today update updates tell me give show find search please jarvis does did can could should would'.split(' '))
@@ -45,10 +47,12 @@ Answer the question in 2 to 5 short sentences of plain text (no markdown, no hea
 They may ask follow-up questions about your answer; answer those as a continuation of the same conversation.
 Use the news headlines and Wikipedia text given with the question when they are relevant, and say which source and how recent.
 If they don't answer it, answer from your own knowledge and say it may be out of date, or say plainly that you don't know and that Google has more.
-Never invent facts, figures, GO numbers or dates.`
+For GST and tax law, name the section, rule, notification or circular when you are sure of it, and say the bare Act on cbic-gst.gov.in is the final word.
+Never invent facts, figures, GO numbers, section or notification numbers, or dates.`
 
 export default async (req) => {
-  if (!(await owner(req))) return json({ error: 'not_signed_in' }, 401)
+  const user = await owner(req)
+  if (!user) return json({ error: 'not_signed_in' }, 401)
 
   if (req.method === 'GET') {
     const q = (new URL(req.url).searchParams.get('q') || '').trim().slice(0, 200)
@@ -69,8 +73,9 @@ export default async (req) => {
     w ? `Wikipedia, "${w.title}": ${String(w.extract).slice(0, 1500)}` : '',
   ].filter(Boolean).join('\n\n')
 
+  const memory = await memoryFor(user)
   const res = await askGemini(key, {
-    systemInstruction: { parts: [{ text: SYSTEM }] },
+    systemInstruction: { parts: [{ text: memory ? `${SYSTEM}\n\n${memory}` : SYSTEM }] },
     contents: [
       { role: 'user', parts: [{ text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` }] },
       // The first question carries the sources; later turns follow it (the last 12 at most)

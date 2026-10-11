@@ -1,6 +1,7 @@
 // Setup check: says in plain words whether each key in Netlify works, and how to fix it.
 // It never shows a key. GET → { checks: [{ name, ok, fix }] }
 import { env, json, signedIn, looksLike, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
+import { readMemory, STORAGE_DOWN } from '../lib/memory.mjs'
 
 const REPO = env('JARVIS_REPO') || 'santoshbhaviri/jarvis'
 const REACH = (who) => `Couldn't reach ${who} just now. Try again in a minute.`
@@ -57,11 +58,17 @@ async function github() {
   } catch { return { name, ok: false, fix: REACH('GitHub') } }
 }
 
+// Memory needs no key: Netlify's own storage
+async function memory(user) {
+  try { await readMemory(user.id); return { name: 'Memory', ok: true } }
+  catch { return { name: 'Memory', ok: false, fix: STORAGE_DOWN } }
+}
+
 export default async (req) => {
   const user = await signedIn(req)
   if (!user) return json({ error: 'not_signed_in' }, 401)
   const you = login(user)
   // Someone else signed in: only say the email doesn't match, test nothing
   if (!you.ok && env('JARVIS_OWNER_EMAIL')) return json({ checks: [you] })
-  return json({ checks: [you, ...(await Promise.all([gemini(), github()]))] })
+  return json({ checks: [you, ...(await Promise.all([gemini(), github(), memory(user)]))] })
 }
