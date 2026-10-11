@@ -38,7 +38,14 @@ async function markReady(nodeId) {
   })
 }
 
-const firstLine = (s) => (s || '').split('\n').find(l => l.trim() && !/^(before:?\s*$|after:?\s*$|#|closes|fixes|resolves)/i.test(l.trim()))?.trim() || ''
+// Only Claude's updates (branches named claude/… in this repository) show in Evolve or can be
+// approved there; package updates and anything else stay on GitHub
+const ours = (p) => p.head?.ref?.startsWith('claude/') && p.head?.repo?.full_name === REPO
+const NOT_OURS = { error: 'not_ours', why: "Jarvis only approves Claude's updates. This one stays on GitHub." }
+
+// The sentence Evolve shows on an update's card: what you'll see after it goes live
+const firstLine = (s) => (s || '').split('\n').map(l => l.trim().replace(/^after:\s*/i, ''))
+  .find(l => l && !/^(before:|#|closes|fixes|resolves)/i.test(l)) || ''
 
 export default async (req) => {
   const ready = !!env('GITHUB_TOKEN') && !!env('JARVIS_OWNER_EMAIL')
@@ -54,7 +61,7 @@ export default async (req) => {
         gh(`/repos/${REPO}/pulls?state=open&per_page=30`),
         gh(`/repos/${REPO}/issues?state=closed&since=${month}&per_page=30`),
       ])
-      const updates = pulls.map(p => ({
+      const updates = pulls.filter(ours).map(p => ({
         number: p.number,
         title: p.title.replace(/^\[Jarvis\]\s*/, ''),
         summary: firstLine(p.body).slice(0, 160),
@@ -83,8 +90,9 @@ export default async (req) => {
       return json({ ok: true, number: issue.number })
     }
     if (!Number.isInteger(number)) return json({ error: 'bad_request' }, 400)
+    const pr = await gh(`/repos/${REPO}/pulls/${number}`)
+    if (!ours(pr)) return json(NOT_OURS, 403)
     if (action === 'approve') {
-      const pr = await gh(`/repos/${REPO}/pulls/${number}`)
       if (pr.draft) await markReady(pr.node_id)
       await gh(`/repos/${REPO}/pulls/${number}/merge`, { method: 'PUT', body: { merge_method: 'squash', commit_title: `${pr.title} (approved in Jarvis)` } })
       return json({ ok: true })

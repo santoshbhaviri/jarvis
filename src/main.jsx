@@ -27,3 +27,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'))
 }
+
+// A home-screen app keeps showing the copy it opened with. Each time you come back to
+// Jarvis, check whether a newer one went live and switch to it (once per new version).
+if (import.meta.env.PROD) {
+  const latest = async () => {
+    try {
+      const { build } = await (await fetch('/version.json', { cache: 'no-store' })).json()
+      if (build && build !== __BUILD__ && sessionStorage.getItem('jarvis-reloaded') !== build) {
+        sessionStorage.setItem('jarvis-reloaded', build)
+        location.reload()
+      }
+    } catch { /* offline: keep the copy we have */ }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') latest() })
+  latest()
+}
