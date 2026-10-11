@@ -75,7 +75,7 @@ export default function MemoryPanel({ onBack }) {
       <CommandBox value={text} onChange={setText} onSubmit={add} busy={busy}
         placeholder="Add something to remember…" label="Add to Memory" />
       {adding && <p className={styles.progress}>{adding}</p>}
-      <p className={styles.muted}>Google's free AI reads what matches each question. Leave out confidential taxpayer details.</p>
+      <p className={styles.muted}>The AI reads only what matches each question. Leave out confidential taxpayer details.</p>
 
       {problem && <p className={styles.muted}>{problem}</p>}
       {empty && (

@@ -1,10 +1,11 @@
 // Adds a document to your Library. The phone reads it first: a PDF's text with pdf.js (loaded
-// only when needed), a text file as it is, and photos and scanned pages through Gemini, one page
-// at a time. The text then goes to Jarvis's server in batches, page by page.
+// only when needed), a text file as it is, and photos and scanned pages through the AI (Claude,
+// or Gemini until Claude is connected), one page at a time. The text then goes to Jarvis's server
+// in batches, page by page.
 import { startDoc, appendDoc, finishDoc, deleteDoc, readPage } from './server'
 
 export const ACCEPT = 'application/pdf,image/*,text/plain,.txt,.md,.csv'
-const MAX_SCANNED = 30        // pages read by Gemini in one document (its free tier is rate limited)
+const MAX_SCANNED = 30        // scanned pages read in one document (each takes a few seconds)
 const BATCH = 300000          // characters sent in one go
 const MAX_PHOTO = 4 * 1024 * 1024
 
@@ -13,7 +14,7 @@ const dataUrl = (blob) => new Promise((resolve, reject) => {
   const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(blob)
 })
 
-// Gemini copies out one page; when Google is busy or at its per-minute limit, try again shortly
+// The AI copies out one page; when it is busy or at its per-minute limit, try again shortly
 async function ocr(type, data) {
   for (const pause of [0, 10000, 25000]) {
     if (pause) await wait(pause)
@@ -21,7 +22,7 @@ async function ocr(type, data) {
     if (!res.error) return res.text || ''
     if (res.error !== 'busy' && res.error !== 'offline') throw new Error(res.why || "Couldn't read this page.")
   }
-  throw new Error("Google's free AI is busy just now. Try again in a minute.")
+  throw new Error('The AI is busy just now. Try again in a minute.')
 }
 
 const canvasJpeg = (canvas) => canvas.toDataURL('image/jpeg', 0.82).split(',')[1]
@@ -78,7 +79,7 @@ async function pdfPages(file, progress) {
     else scanned.push(p)
     page.cleanup()
   }
-  // Pages with (almost) no text are scans: draw each one and let Gemini read it
+  // Pages with (almost) no text are scans: draw each one and let the AI read it
   const reading = scanned.slice(0, MAX_SCANNED)
   for (const [i, p] of reading.entries()) {
     progress(`Reading scanned page ${i + 1} of ${reading.length}…`)

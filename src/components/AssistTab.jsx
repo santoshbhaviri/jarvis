@@ -3,7 +3,8 @@
 // It knows GST law and drafts notices, orders and replies, and reads your Memory before answering;
 // "remember …" saves a note there straight away. The paperclip adds a document (PDF, photo or text)
 // to your Library in full; the next questions in this chat look in it first.
-// Runs on the free Gemini key in Netlify; without it, your question opens in ChatGPT or Claude.
+// Claude answers once it is connected (Evolve, Check setup), or the free Gemini key until then;
+// with neither, your question opens in ChatGPT or Claude.
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
@@ -25,7 +26,7 @@ const IDEAS = ['Plan my day', "What's pending this week?", 'Explain section 74 o
 const REMEMBER = /^(?:please\s+|jarvis[,\s]+)*remember(?:\s+that)?\b[\s:,-]*/i
 const ERRORS = {
   busy: 'Too many questions in a short time. Try again in a minute.',
-  bad_key: 'The Gemini key in Netlify was not accepted. Check GEMINI_API_KEY.',
+  bad_key: 'The AI key was not accepted. Open Evolve and tap Check setup.',
   not_signed_in: 'Please sign out and sign in again.',
   offline: 'No internet connection.',
 }
@@ -36,7 +37,7 @@ const saveDocs = (d) => { try { localStorage.setItem(DOCS, JSON.stringify(d)) } 
 
 export default function AssistTab({ taskData }) {
   const { tasks, addTask, isRoutineDone } = taskData
-  const [inApp, setInApp]     = useState(null)       // Gemini key added in Netlify (null = checking)
+  const [inApp, setInApp]     = useState(null)       // Claude or Gemini connected (null = checking)
   const [turns, setTurns]     = useState(loadChat)
   const [text, setText]       = useState('')
   const [waiting, setWaiting] = useState(false)
@@ -121,7 +122,7 @@ export default function AssistTab({ taskData }) {
             <a className={styles.small} href={claudeLink(asked, ctx)} target="_blank" rel="noreferrer">Claude<ArrowUpRight size={14} /></a>
             <a className={styles.small} href={googleLink(asked, ctx)} target="_blank" rel="noreferrer">Google<ArrowUpRight size={14} /></a>
           </div>
-          <p className={styles.note}>Add the free Gemini key in Netlify to chat right here.</p>
+          <p className={styles.note}>Connect Claude in Evolve, Check setup, to chat right here.</p>
         </div>
       )}
 

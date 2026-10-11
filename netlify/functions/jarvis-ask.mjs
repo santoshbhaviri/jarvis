@@ -1,10 +1,11 @@
-// The Assist tab: chat with Google Gemini (free tier) inside Jarvis.
-// Needs GEMINI_API_KEY in Netlify. Optional GEMINI_MODEL (tried before Flash-Lite and Flash).
+// The Assist tab: chat inside Jarvis with Claude (Sonnet), or with the free Gemini key until Claude
+// is connected (see netlify/lib/ai.mjs).
 // The app sends what you said plus today's tasks; your Memory and the best-matching passages from
 // your Library (documents kept in full) go in too. The answer can carry
 // tasks to add, a message or draft to send, a number to call or something to remember, which the
 // app shows as buttons.
-import { env, json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
+import { json, owner, geminiKey } from '../lib/common.mjs'
+import { askAI, aiReady } from '../lib/ai.mjs'
 import { memoryFor } from '../lib/memory.mjs'
 import { libraryFor } from '../lib/library.mjs'
 
@@ -27,42 +28,49 @@ You cannot search the web. For live news, prices or weather, give what you know 
 You cannot operate their phone, change settings or send anything yourself; the app shows buttons they tap.
 If they ask what you can do: chat and answer anything, GST law and drafting, write and polish messages (send by WhatsApp, SMS or email), turn what they say into tasks, plan the day from their tasks, keep notes and preferences in Memory (say "remember ..." or tap Memory), keep whole documents in their Library (the paperclip in Assist adds a PDF, photo or text file: the bare Act and Rules, notices, orders, circulars) and quote them with document and page, and use both in every answer. The Search tab has the latest news; the Evolve tab takes ideas for Jarvis itself.`
 
+// The answer comes as fields, in this order (so if time runs out, the answer and draft come first)
+const orNull = (description) => ({ anyOf: [{ type: 'string' }, { type: 'null' }], ...(description && { description }) })
 const SCHEMA = {
-  type: 'OBJECT',
-  required: ['answer', 'tasks'],
+  type: 'object', additionalProperties: false,
+  required: ['answer', 'message', 'tasks', 'call', 'remember'],
   properties: {
-    answer: { type: 'STRING', description: 'What you say back, plain text' },
-    tasks: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT', required: ['title', 'important'],
+    answer: { type: 'string', description: 'What you say back, plain text' },
+    message: {
+      anyOf: [{
+        type: 'object', additionalProperties: false, required: ['text', 'to', 'subject'],
         properties: {
-          title: { type: 'STRING' },
-          date: { type: 'STRING', nullable: true, description: 'YYYY-MM-DD, only if a day was given' },
-          important: { type: 'BOOLEAN' },
+          text: { type: 'string' },
+          to: orNull('Phone number or email if the user gave one'),
+          subject: orNull(),
+        },
+      }, { type: 'null' }],
+    },
+    tasks: {
+      type: 'array',
+      items: {
+        type: 'object', additionalProperties: false, required: ['title', 'date', 'important'],
+        properties: {
+          title: { type: 'string' },
+          date: orNull('YYYY-MM-DD, only if a day was given'),
+          important: { type: 'boolean' },
         },
       },
     },
-    message: {
-      type: 'OBJECT', nullable: true, required: ['text'],
-      properties: {
-        text: { type: 'STRING' },
-        to: { type: 'STRING', nullable: true, description: 'Phone number or email if the user gave one' },
-        subject: { type: 'STRING', nullable: true },
-      },
-    },
-    call: { type: 'STRING', nullable: true, description: 'Phone number to call, only if the user gave one' },
-    remember: { type: 'STRING', nullable: true, description: 'A lasting preference or fact worth saving to Memory, in one short sentence' },
+    call: orNull('Phone number to call, only if the user gave one'),
+    remember: orNull('A lasting preference or fact worth saving to Memory, in one short sentence'),
   },
 }
+const MORE = '(I ran out of time here. Say "continue" for the rest.)'
 
 export default async (req) => {
-  const { key, why } = geminiKey()
-  if (req.method === 'GET') return json({ ready: !!env('GEMINI_API_KEY') })
-  if (why) return json({ error: 'bad_key', why }, 503)
-  if (!key) return json({ error: 'not_configured' }, 503)
+  const began = Date.now()
+  if (req.method === 'GET') return json({ ready: await aiReady() })
   const user = await owner(req)
   if (!user) return json({ error: 'not_signed_in' }, 401)
+  if (!(await aiReady())) {
+    const { why } = geminiKey()
+    return why ? json({ error: 'bad_key', why }, 503) : json({ error: 'not_configured' }, 503)
+  }
 
   // docs: Library documents added in this chat, which count first
   const { turns = [], context = '', docs = [] } = await req.json()
@@ -70,32 +78,18 @@ export default async (req) => {
   if (!recent.length || recent.at(-1).role !== 'user') return json({ error: 'empty' }, 400)
 
   // Today's date and tasks go in with the latest question only
-  const contents = recent.map((t, i) => ({
-    role: t.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: i === recent.length - 1 ? `${context}\n\n${t.text}` : t.text }],
-  }))
+  const said = recent.map((t, i) => ({ role: t.role, text: i === recent.length - 1 ? `${context}\n\n${t.text}` : t.text }))
   // The Library is searched with the question and the one before it, for "and what about…"
   const asked = recent.filter(t => t.role === 'user').slice(-2).map(t => t.text).join('\n')
   const [memory, library] = await Promise.all([memoryFor(user), libraryFor(user, asked, { docs: docs.slice(0, 5) })])
-  const res = await askGemini(key, {
-    systemInstruction: { parts: [{ text: [SYSTEM, memory, library].filter(Boolean).join('\n\n') }] },
-    contents,
-    generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, maxOutputTokens: 8192 },
+  const out = await askAI({
+    system: [SYSTEM, memory].filter(Boolean).join('\n\n'), extra: library,
+    turns: said, schema: SCHEMA, effort: 'medium', maxTokens: 8192, until: began + 26000,
   })
-  if (!res || res.status >= 500) return json({ error: 'busy', why: GEMINI_BUSY }, 503)
-  if (res.status === 429) return json({ error: 'busy', why: GEMINI_LIMIT }, 429)
-  if (!res.ok) {
-    const problem = geminiProblem(await res.text())
-    return json({ error: problem ? 'bad_key' : 'api', why: problem || `Gemini answered with error ${res.status}. Try again in a minute.` }, 502)
-  }
-  const data = await res.json()
-  const raw = data.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('') ?? ''
-  try {
-    const out = JSON.parse(raw)
-    return json({ text: out.answer || 'Here you go.', actions: {
-      tasks: out.tasks ?? [], message: out.message ?? null, call: out.call ?? null, remember: out.remember || null,
-    } })
-  } catch {
-    return json({ text: raw || "Sorry, I couldn't answer that one.", actions: null })
-  }
+  if (out.error) return json({ error: out.error, why: out.why }, out.status || 502)
+  const a = out.json
+  const draft = a.message?.text ? a.message : null
+  return json({ text: (a.answer || 'Here you go.') + (out.cut ? `\n\n${MORE}` : ''), actions: {
+    tasks: out.cut ? [] : a.tasks ?? [], message: draft, call: a.call || null, remember: a.remember || null,
+  } })
 }

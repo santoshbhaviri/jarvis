@@ -1,7 +1,7 @@
 // Your Library: documents kept in full (the Acts and Rules, notices, orders, circulars, letters),
 // so Assist and Search can quote them. The app reads each document on the phone (PDF text, or
-// Gemini for scanned pages and photos) and sends the text here page by page. For each question
-// Jarvis finds the passages that match best and hands only those to Gemini, the way ChatGPT
+// the AI for scanned pages and photos) and sends the text here page by page. For each question
+// Jarvis finds the passages that match best and hands only those to the AI, the way ChatGPT
 // works with files: a whole Act is far too long to send with every question.
 // Kept in Netlify Blobs, per login:
 //   <user>/index     → [{ id, name, pages, chars, at, ready }]
@@ -133,7 +133,7 @@ export async function searchLibrary(user, q, { docs = [], budget = 24000 } = {})
   return { list, text: parts.join('\n\n') }
 }
 
-// What Gemini is told about the Library with each question
+// What the AI is told about the Library with each question
 export function libraryPrompt({ list, text }) {
   if (!list.length) return 'Their Library is empty. If they want answers from the bare Act, Rules or their own notices and orders, suggest adding the PDFs with the paperclip in Assist.'
   return `Their Library (documents they added, kept in full): ${list.join('; ')}.\n` +

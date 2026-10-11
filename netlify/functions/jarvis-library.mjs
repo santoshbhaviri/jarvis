@@ -4,10 +4,12 @@
 //   POST { action: 'append', id, pages }         → adds pages of text [{ p, t }] (in batches)
 //   POST { action: 'finish', id }                → the document is complete and searchable
 //   POST { action: 'delete', id }                → removes it
-//   POST { action: 'ocr', type, data }           → Gemini reads the text off one photo or scanned
-//                                                  page (base64) → { text }; nothing is kept
+//   POST { action: 'ocr', type, data }           → Claude (Haiku, or Gemini until Claude is connected)
+//                                                  reads the text off one photo or scanned page
+//                                                  (base64) → { text }; nothing is kept
 import { randomUUID } from 'node:crypto'
-import { json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
+import { json, owner, geminiKey } from '../lib/common.mjs'
+import { askAI, aiReady } from '../lib/ai.mjs'
 import { readIndex, writeIndex, readDoc, writeDoc, removeDoc, chunkPage, MAX_DOCS, MAX_CHARS, MAX_TOTAL } from '../lib/library.mjs'
 import { STORAGE_DOWN } from '../lib/memory.mjs'
 
@@ -19,23 +21,18 @@ Copy numbers, names, dates and amounts exactly; never guess. Write [unclear] whe
 Output only the text, no comments.`
 
 async function ocr({ type = '', data = '' }) {
-  const { key, why } = geminiKey()
-  if (why) return json({ error: 'bad_key', why }, 503)
-  if (!key) return json({ error: 'not_configured', why: 'Reading photos and scanned pages needs the free Gemini key in Netlify.' }, 503)
+  if (!(await aiReady())) {
+    const { why } = geminiKey()
+    return why ? json({ error: 'bad_key', why }, 503) : json({ error: 'not_configured', why: 'Reading photos and scanned pages needs Claude connected (Evolve, Check setup).' }, 503)
+  }
   if (!IMAGES.includes(type)) return json({ error: 'bad_file', why: 'Jarvis reads PDFs, photos and text files.' }, 400)
   if (!data || data.length * 0.75 > MAX_IMAGE) return json({ error: 'too_big', why: 'This photo is too big (over 4 MB).' }, 413)
-  const res = await askGemini(key, {
-    contents: [{ role: 'user', parts: [{ inlineData: { mimeType: type, data } }, { text: OCR }] }],
-    generationConfig: { maxOutputTokens: 8192 },
-  }, 25000)
-  if (!res || res.status >= 500) return json({ error: 'busy', why: GEMINI_BUSY }, 503)
-  if (res.status === 429) return json({ error: 'busy', why: GEMINI_LIMIT }, 429)
-  if (!res.ok) {
-    const problem = geminiProblem(await res.text())
-    return json({ error: problem ? 'bad_key' : 'api', why: problem || "Google couldn't read this page. Try a clearer photo." }, 502)
-  }
-  const out = await res.json()
-  return json({ text: out.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('').trim() || '' })
+  const out = await askAI({
+    system: OCR, turns: [{ role: 'user', text: 'Copy out this page.', image: { type, data } }],
+    model: 'quick', maxTokens: 8192, until: Date.now() + 25000,
+  })
+  if (out.error) return json({ error: out.error, why: out.why || "Couldn't read this page. Try a clearer photo." }, out.status || 502)
+  return json({ text: out.text })
 }
 
 export default async (req) => {

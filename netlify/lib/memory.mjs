@@ -21,7 +21,7 @@ export async function readMemory(userId) {
 
 export const writeMemory = (userId, doc) => store().setJSON(userId, doc)
 
-// What Gemini reads: newest first, up to about 15,000 words
+// What the AI reads: newest first, up to about 15,000 words
 export function memoryText(items, budget = 60000) {
   const lines = []
   let used = 0

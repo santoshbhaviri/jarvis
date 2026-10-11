@@ -16,18 +16,21 @@ async function call(name, { method = 'GET', body, query = '' } = {}) {
   }
 }
 
-// Is a feature switched on (its key added in Netlify)?
+// Is a feature switched on (its key added)?
 export const isReady = async (name) => (await call(name, { query: '?ping' })).ready === true
 
 export const askJarvis    = (turns, context, docs) => call('jarvis-ask', { method: 'POST', body: { turns, context, docs } })
 export const listUpdates  = () => call('jarvis-github')
 export const checkSetup   = () => call('jarvis-setup')
+// Claude: the key is checked and kept on Jarvis's server, never on the phone
+export const connectClaude    = (key) => call('jarvis-claude', { method: 'POST', body: { action: 'save', key } })
+export const disconnectClaude = () => call('jarvis-claude', { method: 'POST', body: { action: 'remove' } })
 export const sendRequest  = (text) => call('jarvis-github', { method: 'POST', body: { action: 'request', text } })
 export const approveUpdate = (number) => call('jarvis-github', { method: 'POST', body: { action: 'approve', number } })
 export const changeUpdate = (number, text) => call('jarvis-github', { method: 'POST', body: { action: 'change', number, text } })
 export const dropUpdate   = (number) => call('jarvis-github', { method: 'POST', body: { action: 'drop', number } })
 
-// Search tab: headlines and Wikipedia (free, no key), then a short answer if Gemini is set up.
+// Search tab: headlines and Wikipedia (free, no key), then a short answer from Claude (or Gemini).
 // turns carries the conversation for a follow-up question.
 export const searchWeb    = (q) => call('jarvis-search', { query: `?q=${encodeURIComponent(q)}` })
 export const searchAnswer = (q, found, turns) => call('jarvis-search', { method: 'POST', body: { q, news: found.news, wiki: found.wiki, turns } })
