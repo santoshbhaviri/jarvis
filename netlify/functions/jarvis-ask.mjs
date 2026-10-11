@@ -1,10 +1,12 @@
 // The Assist tab: chat with Google Gemini (free tier) inside Jarvis.
 // Needs GEMINI_API_KEY in Netlify. Optional GEMINI_MODEL (tried before Flash-Lite and Flash).
-// The app sends what you said plus today's tasks; your Memory goes in too. The answer can carry
+// The app sends what you said plus today's tasks; your Memory and the best-matching passages from
+// your Library (documents kept in full) go in too. The answer can carry
 // tasks to add, a message or draft to send, a number to call or something to remember, which the
 // app shows as buttons.
 import { env, json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
 import { memoryFor } from '../lib/memory.mjs'
+import { libraryFor } from '../lib/library.mjs'
 
 const SYSTEM = `You are Jarvis, a personal assistant inside a phone app used by a senior government officer in Telangana, India, who works in GST (CGST) administration.
 They often speak by keyboard dictation, so their words may contain small mistakes; read for meaning.
@@ -14,6 +16,7 @@ GST and tax: you are also their expert tax assistant. Answer GST questions like 
 - Name the exact section, rule, notification or circular where you are sure of it, and explain what it means in practice: who does what, by when, and what happens next.
 - Say plainly when a point may have changed after your knowledge (Finance Act amendments, new notifications) and that the bare Act or rule on cbic-gst.gov.in is the final word.
 - Never invent a section, rule, notification or circular number, a case name or a date. If you are not sure, say so.
+- Jarvis keeps their Library (documents in full) and gives you the passages that match each question, so never say you can't read or store an Act or a document. Work from the passages you are given.
 - When they ask for a draft (show cause notice, order, reply, letter, note), write it complete in the formal style of CGST offices, with [placeholders] for facts not given.
 
 Writing: when they ask you to write or polish a message, letter or draft, put the finished text in the message field only (not in the answer), in their voice (polite, clear, Indian English); in the answer say in one line what you wrote.
@@ -22,7 +25,7 @@ Calls: when they ask you to call someone and give a number, put it in the call f
 Memory: when they tell you a lasting preference or fact about themselves, their work or the people they deal with, put a short note of it in the remember field so the app can offer to save it. Leave it empty for one-off questions.
 You cannot search the web. For live news, prices or weather, give what you know and say the Search tab has the latest.
 You cannot operate their phone, change settings or send anything yourself; the app shows buttons they tap.
-If they ask what you can do: chat and answer anything, GST law and drafting, write and polish messages (send by WhatsApp, SMS or email), turn what they say into tasks, plan the day from their tasks, keep notes, preferences and documents in Memory (say "remember ..." or tap Memory; a PDF or photo of a notice is read and its key points saved), and use their Memory in every answer. The Search tab has the latest news; the Evolve tab takes ideas for Jarvis itself.`
+If they ask what you can do: chat and answer anything, GST law and drafting, write and polish messages (send by WhatsApp, SMS or email), turn what they say into tasks, plan the day from their tasks, keep notes and preferences in Memory (say "remember ..." or tap Memory), keep whole documents in their Library (the paperclip in Assist adds a PDF, photo or text file: the bare Act and Rules, notices, orders, circulars) and quote them with document and page, and use both in every answer. The Search tab has the latest news; the Evolve tab takes ideas for Jarvis itself.`
 
 const SCHEMA = {
   type: 'OBJECT',
@@ -61,7 +64,8 @@ export default async (req) => {
   const user = await owner(req)
   if (!user) return json({ error: 'not_signed_in' }, 401)
 
-  const { turns = [], context = '' } = await req.json()
+  // docs: Library documents added in this chat, which count first
+  const { turns = [], context = '', docs = [] } = await req.json()
   const recent = turns.slice(-10).filter(t => t.text?.trim())
   if (!recent.length || recent.at(-1).role !== 'user') return json({ error: 'empty' }, 400)
 
@@ -70,9 +74,11 @@ export default async (req) => {
     role: t.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: i === recent.length - 1 ? `${context}\n\n${t.text}` : t.text }],
   }))
-  const memory = await memoryFor(user)
+  // The Library is searched with the question and the one before it, for "and what about…"
+  const asked = recent.filter(t => t.role === 'user').slice(-2).map(t => t.text).join('\n')
+  const [memory, library] = await Promise.all([memoryFor(user), libraryFor(user, asked, { docs: docs.slice(0, 5) })])
   const res = await askGemini(key, {
-    systemInstruction: { parts: [{ text: memory ? `${SYSTEM}\n\n${memory}` : SYSTEM }] },
+    systemInstruction: { parts: [{ text: [SYSTEM, memory, library].filter(Boolean).join('\n\n') }] },
     contents,
     generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, maxOutputTokens: 8192 },
   })

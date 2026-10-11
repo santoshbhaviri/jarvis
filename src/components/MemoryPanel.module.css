@@ -17,3 +17,7 @@
 .foot small { color: var(--text3); font-size: 12px; }
 .bin { display: grid; place-items: center; width: 32px; height: 32px; margin-right: -8px; background: none; color: var(--text3); border-radius: 50%; }
 .sure { padding: 5px 12px; border-radius: 99px; font-size: 12.5px; font-weight: 600; background: var(--missed-soft); color: var(--missed); border: 1px solid var(--missed); }
+.panel section { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.progress { font-size: 13px; color: var(--star-text); font-weight: 600; }
+.doc { display: flex; align-items: flex-start; gap: 8px; font-size: 15px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.doc svg { flex-shrink: 0; margin-top: 2px; color: var(--star-text); }

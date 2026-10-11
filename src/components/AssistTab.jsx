@@ -1,21 +1,25 @@
 // Assist: chat with Jarvis like ChatGPT or Gemini. It knows today's tasks, writes and polishes
 // messages (send by WhatsApp, SMS or email), turns what you say into tasks, and can dial a number.
 // It knows GST law and drafts notices, orders and replies, and reads your Memory before answering;
-// "remember …" saves a note there straight away.
+// "remember …" saves a note there straight away. The paperclip adds a document (PDF, photo or text)
+// to your Library in full; the next questions in this chat look in it first.
 // Runs on the free Gemini key in Netlify; without it, your question opens in ChatGPT or Claude.
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
-import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen, BookMarked } from 'lucide-react'
+import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen, BookMarked, FileText } from 'lucide-react'
 import { askJarvis, isReady, addMemory } from '../lib/server'
 import { dayContext, chatgptLink, claudeLink, googleLink } from '../lib/assistant'
 import { todayStr } from '../lib/dateUtils'
+import { ACCEPT } from '../lib/library'
+import { useAddDocument } from '../hooks/useAddDocument'
 import CommandBox from './CommandBox'
 import MemoryPanel from './MemoryPanel'
 import SaveButton from './SaveButton'
 import styles from './AssistTab.module.css'
 
 const CHAT = 'jarvis-chat'
+const DOCS = 'jarvis-chat-docs'       // Library documents added in this chat
 const IDEAS = ['Plan my day', "What's pending this week?", 'Explain section 74 of CGST Act', 'What can you do?']
 // "Remember that …" saves to Memory; "remember to …" is a task, and a question is a question
 const REMEMBER = /^(?:please\s+|jarvis[,\s]+)*remember(?:\s+that)?\b[\s:,-]*/i
@@ -27,6 +31,8 @@ const ERRORS = {
 }
 const loadChat = () => { try { return JSON.parse(localStorage.getItem(CHAT)) || [] } catch { return [] } }
 const saveChat = (t) => { try { localStorage.setItem(CHAT, JSON.stringify(t.slice(-30))) } catch { /* private mode */ } }
+const loadDocs = () => { try { return JSON.parse(localStorage.getItem(DOCS)) || [] } catch { return [] } }
+const saveDocs = (d) => { try { localStorage.setItem(DOCS, JSON.stringify(d)) } catch { /* private mode */ } }
 
 export default function AssistTab({ taskData }) {
   const { tasks, addTask, isRoutineDone } = taskData
@@ -36,11 +42,14 @@ export default function AssistTab({ taskData }) {
   const [waiting, setWaiting] = useState(false)
   const [asked, setAsked]     = useState(null)       // without the key: the question to open elsewhere
   const [memory, setMemory]   = useState(false)      // showing Memory instead of the chat
+  const [docs, setDocs]       = useState(loadDocs)
+  const { adding, add: addDoc } = useAddDocument()
   const endRef = useRef(null)
   const ctx = dayContext(tasks, isRoutineDone)
 
   useEffect(() => { isReady('jarvis-ask').then(setInApp) }, [])
   useEffect(() => { saveChat(turns) }, [turns])
+  useEffect(() => { saveDocs(docs) }, [docs])
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }) }, [turns.length, waiting])
 
   const ask = async (said) => {
@@ -63,12 +72,23 @@ export default function AssistTab({ taskData }) {
     // A draft sits in its own card, so it goes back with the answer for "make it shorter"
     const history = next.filter(t => !t.error).slice(-10)
       .map(({ role, text, actions }) => ({ role, text: actions?.message?.text ? `${text}\n\n${actions.message.text}` : text }))
-    const res = await askJarvis(history, ctx)
+    const res = await askJarvis(history, ctx, docs)
     setWaiting(false)
     setTurns(prev => [...prev, res.error
       ? { role: 'assistant', text: res.why || ERRORS[res.error] || 'Something went wrong. Please try again.', error: true }
       : { role: 'assistant', text: res.text, actions: res.actions }])
   }
+
+  const attach = async (file) => {
+    if (adding) return
+    const doc = await addDoc(file)
+    if (!doc) return
+    setDocs(prev => [...prev.filter(id => id !== doc.id), doc.id].slice(-5))
+    setTurns(prev => [...prev,
+      { role: 'user', text: `Added a document: ${doc.name} (${doc.pages} page${doc.pages === 1 ? '' : 's'})`, doc: doc.name },
+      { role: 'assistant', text: `${doc.name} is in your Library now. Ask me anything about it.`, saved: true }])
+  }
+  const fresh = () => { setTurns([]); setDocs([]) }
 
   if (memory) return <div className={styles.tab}><MemoryPanel onBack={() => setMemory(false)} /></div>
 
@@ -76,12 +96,12 @@ export default function AssistTab({ taskData }) {
     <div className={styles.tab}>
       <div className={styles.bar}>
         <button className={styles.fresh} onClick={() => setMemory(true)}><BookMarked size={15} />Memory</button>
-        {turns.length > 0 && <button className={styles.fresh} onClick={() => setTurns([])}><SquarePen size={15} />New chat</button>}
+        {turns.length > 0 && <button className={styles.fresh} onClick={fresh}><SquarePen size={15} />New chat</button>}
       </div>
       {turns.length > 0 && (
         <div className={styles.thread}>
           {turns.map((t, i) => t.role === 'user'
-            ? <div key={i} className={styles.me}>{t.text}</div>
+            ? <div key={i} className={`${styles.me} ${t.doc ? styles.file : ''}`}>{t.doc ? <><FileText size={16} />{t.doc}</> : t.text}</div>
             : <Answer key={i} turn={t} q={turns[i - 1]?.text} addTask={addTask} />)}
           {waiting && <div className={`${styles.them} ${styles.thinking}`}>Thinking…</div>}
         </div>
@@ -106,7 +126,9 @@ export default function AssistTab({ taskData }) {
       )}
 
       <div ref={endRef}>
-        <CommandBox value={text} onChange={setText} onSubmit={ask} busy={waiting}
+        {adding && <p className={styles.progress}>{adding}</p>}
+        <CommandBox value={text} onChange={setText} onSubmit={ask} busy={waiting || !!adding}
+          onAttach={attach} accept={ACCEPT}
           placeholder="Ask Jarvis anything…" label="Ask Jarvis" />
       </div>
     </div>

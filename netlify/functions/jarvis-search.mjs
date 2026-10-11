@@ -1,10 +1,11 @@
 // The Search tab. Free, no key needed:
 //   GET ?q=…                 → latest Google News headlines and a Wikipedia summary
 //   POST {q, news, wiki}     → a short answer written from those by Gemini (needs GEMINI_API_KEY),
-//                              with your Memory in mind
+//                              with your Memory and Library in mind
 // Gemini's free tier can't search Google itself, so Jarvis fetches the news first and hands it over.
 import { env, json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
 import { memoryFor } from '../lib/memory.mjs'
+import { libraryFor } from '../lib/library.mjs'
 
 const UA = 'Jarvis personal assistant (https://github.com/santoshbhaviri/jarvis)'
 const STOP = new Set('what who whom whose why how when where which is are was were the a an of in on for to and or about latest news today update updates tell me give show find search please jarvis does did can could should would'.split(' '))
@@ -73,9 +74,10 @@ export default async (req) => {
     w ? `Wikipedia, "${w.title}": ${String(w.extract).slice(0, 1500)}` : '',
   ].filter(Boolean).join('\n\n')
 
-  const memory = await memoryFor(user)
+  const last = turns.length ? turns.at(-1).text : q
+  const [memory, library] = await Promise.all([memoryFor(user), libraryFor(user, `${q}\n${last}`, { budget: 12000 })])
   const res = await askGemini(key, {
-    systemInstruction: { parts: [{ text: memory ? `${SYSTEM}\n\n${memory}` : SYSTEM }] },
+    systemInstruction: { parts: [{ text: [SYSTEM, memory, library].filter(Boolean).join('\n\n') }] },
     contents: [
       { role: 'user', parts: [{ text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` }] },
       // The first question carries the sources; later turns follow it (the last 12 at most)

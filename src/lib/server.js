@@ -19,7 +19,7 @@ async function call(name, { method = 'GET', body, query = '' } = {}) {
 // Is a feature switched on (its key added in Netlify)?
 export const isReady = async (name) => (await call(name, { query: '?ping' })).ready === true
 
-export const askJarvis    = (turns, context) => call('jarvis-ask', { method: 'POST', body: { turns, context } })
+export const askJarvis    = (turns, context, docs) => call('jarvis-ask', { method: 'POST', body: { turns, context, docs } })
 export const listUpdates  = () => call('jarvis-github')
 export const checkSetup   = () => call('jarvis-setup')
 export const sendRequest  = (text) => call('jarvis-github', { method: 'POST', body: { action: 'request', text } })
@@ -36,6 +36,13 @@ export const searchAnswer = (q, found, turns) => call('jarvis-search', { method:
 export const listMemory   = () => call('jarvis-memory')
 export const addMemory    = (text, from = 'you', title) => call('jarvis-memory', { method: 'POST', body: { text, from, title } })
 export const deleteMemory = (id) => call('jarvis-memory', { method: 'POST', body: { action: 'delete', id } })
-export const readDocument = (file) => call('jarvis-memory', { method: 'POST', body: { action: 'read', ...file } })
 // Takes one of Claude's replies off Evolve (it stays on GitHub)
 export const hideReply    = (id) => call('jarvis-memory', { method: 'POST', body: { action: 'hide', id } })
+
+// Library: documents kept in full, searched for every question in Search and Assist
+export const listLibrary = () => call('jarvis-library')
+export const startDoc     = (name) => call('jarvis-library', { method: 'POST', body: { action: 'start', name } })
+export const appendDoc    = (id, pages) => call('jarvis-library', { method: 'POST', body: { action: 'append', id, pages } })
+export const finishDoc    = (id) => call('jarvis-library', { method: 'POST', body: { action: 'finish', id } })
+export const deleteDoc    = (id) => call('jarvis-library', { method: 'POST', body: { action: 'delete', id } })
+export const readPage     = (type, data) => call('jarvis-library', { method: 'POST', body: { action: 'ocr', type, data } })

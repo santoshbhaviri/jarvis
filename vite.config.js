@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -9,4 +10,19 @@ const version = {
   generateBundle() { this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: BUILD }) }) },
 }
 
-export default defineConfig({ plugins: [react(), version], define: { __BUILD__: JSON.stringify(BUILD) } })
+// pdf.js decodes the images in some scanned PDFs (fax and JPEG 2000) with these, loaded by
+// name from /pdfjs/ (see src/lib/library.js)
+const pdfjsDecoders = {
+  name: 'pdfjs-decoders',
+  generateBundle() {
+    for (const f of ['jbig2_nowasm_fallback.js', 'openjpeg_nowasm_fallback.js']) {
+      this.emitFile({ type: 'asset', fileName: `pdfjs/${f}`, source: readFileSync(new URL(`./node_modules/pdfjs-dist/wasm/${f}`, import.meta.url)) })
+    }
+  },
+}
+
+export default defineConfig({
+  plugins: [react(), version, pdfjsDecoders],
+  define: { __BUILD__: JSON.stringify(BUILD) },
+  worker: { format: 'es' },   // pdf.js's reader runs as a module worker
+})
