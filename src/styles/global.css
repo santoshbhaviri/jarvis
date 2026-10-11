@@ -1,81 +1,98 @@
 /* src/styles/global.css */
 
-/* Ink & Teal theme. Every colour in the app comes from these variables. */
+/* Midnight & Gold: deep ink, warm ivory and a touch of gold.
+   Every colour, font and corner in the app comes from these variables. */
 
-/* ── Dark mode (default) ── */
+/* ── Dark mode ── */
 :root {
-  --bg:          #0f1214;
-  --bg2:         #0f1214;
-  --surface:     #171b1e;
-  --surface2:    #1e2327;
-  --surface3:    #262c31;
-  --border:      rgba(255,255,255,0.07);
-  --border2:     rgba(255,255,255,0.12);
+  --bg:          #0a0d16;
+  --bg2:         #0a0d16;
+  --surface:     #121726;
+  --surface2:    #192033;
+  --surface3:    #222b42;
+  --border:      rgba(255,255,255,0.06);
+  --border2:     rgba(255,255,255,0.11);
 
-  --text:        #eceff1;
-  --text2:       #a3acb3;
-  --text3:       #67717a;
+  --text:        #edeff4;
+  --text2:       #a2a9b8;
+  --text3:       #6b7387;
 
-  --accent:      #2bb3a3;
+  --accent:      #d2b270;
   --accent1:     var(--accent);
-  --accent-soft: rgba(43,179,163,0.14);
+  --accent-soft: rgba(210,178,112,0.12);
   --accent-glow: none;
-  --on-accent:   #06201d;
+  --on-accent:   #141a2b;
+  --gold:        #d2b270;
+  --gold-soft:   rgba(210,178,112,0.12);
 
-  --done:        #4ade80;
-  --done-soft:   rgba(74,222,128,0.14);
+  --done:        #63c095;
+  --done-soft:   rgba(99,192,149,0.12);
   --success:     var(--done);
-  --missed:      #f87171;
-  --missed-soft: rgba(248,113,113,0.12);
-  --danger:      #f87171;
-  --star:        #fbbf24;
-  --star-soft:   rgba(251,191,36,0.10);
-  --star-text:   #fbbf24;
-  --warn:        #fbbf24;
+  --missed:      #ee7f73;
+  --missed-soft: rgba(238,127,115,0.10);
+  --danger:      #ee7f73;
+  --star:        #d2b270;
+  --star-soft:   rgba(210,178,112,0.07);
+  --star-text:   #d9bc80;
+  --warn:        #d9bc80;
 
-  --header-bg:   rgba(15,18,20,0.92);
-  --hero-bg:     #171b1e;
+  --header-bg:   rgba(10,13,22,0.82);
+  /* The day card: a deep midnight card with gold, in both modes */
+  --hero-bg:     linear-gradient(150deg, #1d2a4b 0%, #121a30 70%, #0f1528 100%);
+  --hero-border: rgba(210,178,112,0.22);
+  --hero-text:   #f6f2e9;
+  --hero-text2:  rgba(246,242,233,0.62);
+  --hero-line:   rgba(255,255,255,0.10);
+  --hero-gold:   #d8b976;
+  --toast-bg:    #f3efe6;
+  --toast-text:  #141a2b;
 
-  --radius-sm:   6px;
-  --radius:      10px;
+  --radius-sm:   8px;
+  --radius:      12px;
   --radius-lg:   16px;
-  --radius-xl:   18px;
-  --shadow:      0 4px 20px rgba(0,0,0,0.4);
-  --font-display:'Inter', sans-serif;
-  --font-body:   'Inter', sans-serif;
+  --radius-xl:   22px;
+  --shadow:      0 1px 2px rgba(0,0,0,0.30), 0 10px 28px rgba(0,0,0,0.32);
+  --shadow-lg:   0 18px 40px rgba(4,7,16,0.45);
+  --font-body:   -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Segoe UI', Roboto, sans-serif;
+  --font-serif:  'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --font-display: var(--font-serif);
 }
 
 /* ── Light mode ── */
 [data-theme="light"] {
-  --bg:          #f7f7f5;
-  --bg2:         #f7f7f5;
+  --bg:          #f7f5f0;
+  --bg2:         #f7f5f0;
   --surface:     #ffffff;
-  --surface2:    #f2f2ef;
-  --surface3:    #e9e9e5;
-  --border:      rgba(20,20,20,0.08);
-  --border2:     rgba(20,20,20,0.14);
+  --surface2:    #f1eee7;
+  --surface3:    #e6e1d6;
+  --border:      rgba(23,28,44,0.07);
+  --border2:     rgba(23,28,44,0.13);
 
-  --text:        #1c1c1e;
-  --text2:       #5f6368;
-  --text3:       #9aa0a6;
+  --text:        #151a2b;
+  --text2:       #596072;
+  --text3:       #979ca8;
 
-  --accent:      #0f766e;
-  --accent-soft: rgba(15,118,110,0.10);
-  --on-accent:   #ffffff;
+  --accent:      #1c2b4d;
+  --accent-soft: rgba(28,43,77,0.07);
+  --on-accent:   #f7f5f0;
+  --gold:        #b08d4c;
+  --gold-soft:   rgba(176,141,76,0.12);
 
-  --done:        #15803d;
-  --done-soft:   rgba(21,128,61,0.12);
-  --missed:      #b91c1c;
-  --missed-soft: rgba(185,28,28,0.08);
-  --danger:      #b91c1c;
-  --star:        #b45309;
-  --star-soft:   rgba(180,83,9,0.08);
-  --star-text:   #b45309;
-  --warn:        #b45309;
+  --done:        #2e7d5b;
+  --done-soft:   rgba(46,125,91,0.10);
+  --missed:      #b3433a;
+  --missed-soft: rgba(179,67,58,0.08);
+  --danger:      #b3433a;
+  --star:        #b08d4c;
+  --star-soft:   rgba(176,141,76,0.08);
+  --star-text:   #8c6b2e;
+  --warn:        #8c6b2e;
 
-  --header-bg:   rgba(247,247,245,0.92);
-  --hero-bg:     #ffffff;
-  --shadow:      0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --header-bg:   rgba(247,245,240,0.84);
+  --toast-bg:    #151a2b;
+  --toast-text:  #f7f5f0;
+  --shadow:      0 1px 2px rgba(21,26,43,0.04), 0 8px 24px rgba(21,26,43,0.06);
+  --shadow-lg:   0 18px 40px rgba(21,26,43,0.22);
 }
 
 /* ── Reset ── */
@@ -83,6 +100,7 @@
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 body {
   font-family: var(--font-body);
+  font-size: 15px; letter-spacing: -0.005em;
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
@@ -95,3 +113,7 @@ a { text-decoration: none; color: inherit; }
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+/* Line icons (Lucide), one weight everywhere */
+.lucide { stroke-width: 1.75; flex-shrink: 0; }
+::selection { background: var(--gold-soft); }

@@ -2,7 +2,8 @@
 // Phone reminders.
 //  • Push (works with the app closed): needs VITE_VAPID_PUBLIC_KEY and the
 //    send-reminders edge function — see README "Reminders".
-//  • In-app: whenever the app is open after 7 am, shows the day's summary once.
+//  • In-app: whenever the app is open after 7 am, shows the day's summary once,
+//    and after 8 pm a nudge to wrap up the day if tasks are left.
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { todayStr } from '../lib/dateUtils'
@@ -10,6 +11,7 @@ import { daySummary } from '../lib/summary'
 
 const VAPID_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY
 const SHOWN_KEY = 'jarvis-summary-shown'
+const WRAP_SHOWN_KEY = 'jarvis-wrapup-shown'
 const supported = typeof window !== 'undefined' && 'Notification' in window && 'serviceWorker' in navigator
 
 function urlBase64ToUint8Array(base64) {
@@ -54,6 +56,16 @@ export function useReminders(tasks, loading) {
     const check = async () => {
       const today = todayStr()
       if (new Date().getHours() < 7) return
+      if (new Date().getHours() >= 20) {
+        const left = tasks.filter(t => t.status !== 'routine' && !t.completed_at && t.due_date <= today).length
+        let shown = false
+        try { shown = localStorage.getItem(WRAP_SHOWN_KEY) === today } catch { /* private mode */ }
+        if (left && !shown) {
+          const reg = await navigator.serviceWorker.ready
+          await reg.showNotification('JARVIS · evening', { body: `${left} left today. Tap to wrap up.`, tag: 'jarvis-wrapup', icon: '/icon-192.png', badge: '/icon-192.png' })
+          try { localStorage.setItem(WRAP_SHOWN_KEY, today) } catch { /* private mode */ }
+        }
+      }
       try { if (localStorage.getItem(SHOWN_KEY) === today) return } catch { /* private mode */ }
       const { count, text } = daySummary(tasks, today)
       if (!count) return

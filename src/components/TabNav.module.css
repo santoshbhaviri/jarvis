@@ -1,42 +1,38 @@
 .nav {
-  background: var(--bg2);
+  background: var(--header-bg);
+  backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
   border-bottom: 1px solid var(--border);
-  position: sticky; top: 57px; z-index: 40;
+  position: sticky; top: calc(57px + env(safe-area-inset-top)); z-index: 40;
 }
 .inner {
   max-width: 760px; margin: 0 auto;
-  padding: 10px 14px;
-  display: flex; gap: 8px;
-  overflow-x: auto; scrollbar-width: none;
+  padding: 6px 10px 7px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px;
 }
-.inner::-webkit-scrollbar { display: none; }
 
+/* Six tabs fit a phone: icon over a short label */
 .tab {
-  flex: 1 1 0; min-width: 0; justify-content: center;
-  display: flex; align-items: center; gap: 5px;
-  padding: 7px 8px;
-  border-radius: 99px;
-  border: 1.5px solid var(--border2);
+  position: relative; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 2px 6px;
+  border-radius: 14px;
   background: transparent;
-  color: var(--text2);
-  font-size: 12px; font-weight: 600;
-  white-space: nowrap;
-  transition: all 0.2s;
+  color: var(--text3);
+  transition: background 0.2s, color 0.2s;
 }
-.tab:hover:not(.active) { border-color: var(--accent1); color: var(--accent1); }
-
-.active {
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--on-accent);
-  box-shadow: var(--accent-glow);
+.tab:hover:not(.active) { color: var(--text2); }
+.active { background: var(--accent-soft); color: var(--accent); }
+.active .icon { stroke-width: 2; }
+.label { font-size: 10.5px; font-weight: 500; letter-spacing: 0.01em; white-space: nowrap; }
+.active .label { font-weight: 650; }
+.badge {
+  position: absolute; top: 3px; right: calc(50% - 21px);
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px;
+  background: var(--gold); color: #141a2b; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+  box-shadow: 0 0 0 2px var(--bg);
 }
-
-.icon  { font-size: 14px; }
-.label { font-size: 12px; }
 
 @media(min-width:640px){
-  .inner { padding: 12px 24px; gap: 10px; }
-  .tab   { flex: 0 0 auto; padding: 8px 18px; font-size: 13px; }
-  .label { font-size: 13px; }
+  .inner { padding: 8px 24px; gap: 8px; }
+  .label { font-size: 12px; }
 }
