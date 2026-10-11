@@ -40,6 +40,7 @@
 .tools { margin-left: -6px; }
 .tools button { display: grid; place-items: center; width: 32px; height: 32px; background: none; color: var(--text3); border-radius: 50%; }
 .tools button:hover { background: var(--surface2); color: var(--text); }
+.tools button:disabled { color: var(--star-text); }
 .news { list-style: none; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
 .news li { padding: 13px 16px; display: flex; flex-direction: column; gap: 3px; }
 .news li + li { border-top: 1px solid var(--border); }

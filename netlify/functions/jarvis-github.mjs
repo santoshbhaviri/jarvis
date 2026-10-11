@@ -1,13 +1,15 @@
 // Lets Jarvis change itself without leaving the app:
 //   POST {action:'request', text}   → a new "[Jarvis] …" request on GitHub; Claude builds it
 //   GET                             → updates waiting for you, requests being built, what went live lately,
-//                                     and Claude's replies to your requests
+//                                     and Claude's replies to your requests (less the ones you
+//                                     saved or deleted in Evolve, kept in your Memory record)
 //   POST {action:'approve', number} → you approved it in the app: puts it live (merges; Netlify redeploys)
 //   POST {action:'change', number, text} → asks Claude to change that update
 //   POST {action:'drop', number}    → throws that update away
 // Needs GITHUB_TOKEN (fine-grained, this repo only: Contents, Issues, Pull requests = read & write)
 // and JARVIS_OWNER_EMAIL in Netlify.
 import { env, json, owner, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
+import { readMemory } from '../lib/memory.mjs'
 
 const REPO = env('JARVIS_REPO') || 'santoshbhaviri/jarvis'
 const SITE = env('JARVIS_SITE') || 'drjarvis'
@@ -56,17 +58,19 @@ export default async (req) => {
   const ready = !!env('GITHUB_TOKEN') && !!env('JARVIS_OWNER_EMAIL')
   if (req.method === 'GET' && new URL(req.url).searchParams.has('ping')) return json({ ready })
   if (!ready) return json({ error: 'not_configured' }, 503)
-  if (!(await owner(req))) return json({ error: 'not_signed_in' }, 401)
+  const user = await owner(req)
+  if (!user) return json({ error: 'not_signed_in' }, 401)
 
   try {
     if (req.method === 'GET') {
       const month = new Date(Date.now() - 30 * 864e5).toISOString()
-      const [issues, pulls, closed, comments] = await Promise.all([
+      const [issues, pulls, closed, comments, hidden] = await Promise.all([
         gh(`/repos/${REPO}/issues?state=open&per_page=30`),
         gh(`/repos/${REPO}/pulls?state=open&per_page=30`),
         gh(`/repos/${REPO}/issues?state=closed&since=${month}&per_page=30`),
         // Replies are extra: if they can't be read, the rest of Evolve still shows
         gh(`/repos/${REPO}/issues/comments?since=${month}&sort=created&direction=desc&per_page=50`).catch(() => []),
+        readMemory(user.id).then(m => new Set(m.hidden), () => new Set()),
       ])
       const updates = pulls.filter(ours).map(p => ({
         number: p.number,
@@ -90,7 +94,7 @@ export default async (req) => {
         .filter(i => /^\[Jarvis\]/.test(i.title) || (i.pull_request && i.title && pulls.some(p => p.number === i.number && ours(p))))
         .map(i => [i.number, i.title.replace(/^\[Jarvis\]\s*/, '')]))
       const replies = (Array.isArray(comments) ? comments : [])
-        .filter(c => SIGNED.test(c.body || ''))
+        .filter(c => SIGNED.test(c.body || '') && !hidden.has(c.id))
         .map(c => ({ id: c.id, number: +c.issue_url.split('/').pop(), text: plain(c.body), at: c.created_at }))
         .filter(r => asked.has(r.number) && r.text)
         .map(r => ({ ...r, request: asked.get(r.number) }))
