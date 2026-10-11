@@ -1,10 +1,12 @@
 // The Search tab. Free, no key needed:
 //   GET ?q=…                 → latest Google News headlines and a Wikipedia summary
-//   POST {q, news, wiki}     → a short answer written from those by Gemini (needs GEMINI_API_KEY),
-//                              with your Memory in mind
-// Gemini's free tier can't search Google itself, so Jarvis fetches the news first and hands it over.
-import { env, json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
+//   POST {q, news, wiki}     → a short answer written from those by Claude (or the free Gemini key
+//                              until Claude is connected), with your Memory and Library in mind
+// Jarvis fetches the news first and hands it over with the question.
+import { json, owner, geminiKey } from '../lib/common.mjs'
+import { askAI, aiReady } from '../lib/ai.mjs'
 import { memoryFor } from '../lib/memory.mjs'
+import { libraryFor } from '../lib/library.mjs'
 
 const UA = 'Jarvis personal assistant (https://github.com/santoshbhaviri/jarvis)'
 const STOP = new Set('what who whom whose why how when where which is are was were the a an of in on for to and or about latest news today update updates tell me give show find search please jarvis does did can could should would'.split(' '))
@@ -51,6 +53,7 @@ For GST and tax law, name the section, rule, notification or circular when you a
 Never invent facts, figures, GO numbers, section or notification numbers, or dates.`
 
 export default async (req) => {
+  const began = Date.now()
   const user = await owner(req)
   if (!user) return json({ error: 'not_signed_in' }, 401)
 
@@ -58,12 +61,13 @@ export default async (req) => {
     const q = (new URL(req.url).searchParams.get('q') || '').trim().slice(0, 200)
     if (!q) return json({ error: 'empty' }, 400)
     const [n, w] = await Promise.allSettled([news(q), wiki(q)])
-    return json({ news: n.value || [], wiki: w.value || null, answers: !!env('GEMINI_API_KEY') })
+    return json({ news: n.value || [], wiki: w.value || null, answers: await aiReady() })
   }
 
-  const { key, why } = geminiKey()
-  if (why) return json({ error: 'bad_key', why }, 503)
-  if (!key) return json({ error: 'not_configured' }, 503)
+  if (!(await aiReady())) {
+    const { why } = geminiKey()
+    return why ? json({ error: 'bad_key', why }, 503) : json({ error: 'not_configured' }, 503)
+  }
   // turns: the conversation so far when you ask a follow-up ([{ role, text }], ending with yours)
   const { q = '', news: found = [], wiki: w = null, turns = [] } = await req.json()
   if (!q.trim()) return json({ error: 'empty' }, 400)
@@ -73,25 +77,18 @@ export default async (req) => {
     w ? `Wikipedia, "${w.title}": ${String(w.extract).slice(0, 1500)}` : '',
   ].filter(Boolean).join('\n\n')
 
-  const memory = await memoryFor(user)
-  const res = await askGemini(key, {
-    systemInstruction: { parts: [{ text: memory ? `${SYSTEM}\n\n${memory}` : SYSTEM }] },
-    contents: [
-      { role: 'user', parts: [{ text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` }] },
+  const last = turns.length ? turns.at(-1).text : q
+  const [memory, library] = await Promise.all([memoryFor(user), libraryFor(user, `${q}\n${last}`, { budget: 12000 })])
+  const out = await askAI({
+    system: [SYSTEM, memory].filter(Boolean).join('\n\n'), extra: library,
+    turns: [
+      { role: 'user', text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` },
       // The first question carries the sources; later turns follow it (the last 12 at most)
-      ...turns.slice(1).slice(-12).filter(t => t.text?.trim()).map(t => ({
-        role: t.role === 'assistant' ? 'model' : 'user', parts: [{ text: String(t.text).slice(0, 4000) }],
-      })),
+      ...turns.slice(1).slice(-12).filter(t => t.text?.trim()).map(t => ({ role: t.role, text: String(t.text).slice(0, 4000) })),
     ],
-    generationConfig: { maxOutputTokens: 4096 },
+    effort: 'low', maxTokens: 4096, until: began + 26000,
   })
-  if (!res || res.status >= 500) return json({ error: 'busy', why: GEMINI_BUSY }, 503)
-  if (res.status === 429) return json({ error: 'busy', why: GEMINI_LIMIT }, 429)
-  if (!res.ok) {
-    const problem = geminiProblem(await res.text())
-    return json({ error: problem ? 'bad_key' : 'api', why: problem }, 502)
-  }
-  const data = await res.json()
-  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('').trim()
-  return text ? json({ text }) : json({ error: 'api' }, 502)
+  if (out.error) return json({ error: out.error, why: out.why }, out.status || 502)
+  if (!out.text) return json({ error: 'api' }, 502)
+  return json({ text: out.cut ? `${out.text} …` : out.text })
 }

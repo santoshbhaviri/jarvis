@@ -1,7 +1,9 @@
-// Setup check: says in plain words whether each key in Netlify works, and how to fix it.
-// It never shows a key. GET → { checks: [{ name, ok, fix }] }
+// Setup check: says in plain words whether each key works, and how to fix it.
+// It never shows a key. GET → { checks: [{ name, ok, fix, note? }] }; the Claude row also says
+// whether to show the box for pasting a key (paste) and where the key is kept (where).
 import { env, json, signedIn, looksLike, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
 import { readMemory, STORAGE_DOWN } from '../lib/memory.mjs'
+import { claudeKey, testClaude, spent, RUPEES } from '../lib/ai.mjs'
 
 const REPO = env('JARVIS_REPO') || 'santoshbhaviri/jarvis'
 const REACH = (who) => `Couldn't reach ${who} just now. Try again in a minute.`
@@ -18,8 +20,20 @@ function login(user) {
   return { name: 'Your email', ok: true }
 }
 
-async function gemini() {
-  const name = 'Gemini key (Search and Assist)'
+// Claude: works, and what it has cost this month
+async function claude() {
+  const name = 'Claude (Search, Assist, reading pages)'
+  const { key, where } = await claudeKey()
+  if (!key) return { id: 'claude', name, ok: false, paste: true, fix: 'Paste your Claude key here and Claude answers in Search and Assist.' }
+  const [test, month] = await Promise.all([testClaude(key), spent()])
+  const note = month && `This month so far: about ₹${Math.round(month.usd * RUPEES)} ($${month.usd.toFixed(2)}), ${month.answers} answer${month.answers === 1 ? '' : 's'}.`
+  if (!test.error) return { id: 'claude', name, ok: true, note, where }
+  return { id: 'claude', name, ok: false, fix: test.why, note, where, paste: test.error === 'bad_key' && where === 'jarvis' }
+}
+
+// With Claude connected, Gemini is only the stand-in for when Claude can't answer
+async function gemini(backup) {
+  const name = backup ? 'Gemini key (stand-in when Claude is busy)' : 'Gemini key (Search and Assist)'
   const { key, why } = geminiKey()
   if (why) return { name, ok: false, fix: why + ' Paste the Gemini key there instead.' }
   if (!key) return { name, ok: false, fix: 'Add GEMINI_API_KEY in Netlify: a free key from aistudio.google.com/apikey.' }
@@ -70,5 +84,7 @@ export default async (req) => {
   const you = login(user)
   // Someone else signed in: only say the email doesn't match, test nothing
   if (!you.ok && env('JARVIS_OWNER_EMAIL')) return json({ checks: [you] })
-  return json({ checks: [you, ...(await Promise.all([gemini(), github(), memory(user)]))] })
+  const withClaude = !!(await claudeKey()).key
+  const rows = await Promise.all([claude(), withClaude && !env('GEMINI_API_KEY') ? null : gemini(withClaude), github(), memory(user)])
+  return json({ checks: [you, ...rows.filter(Boolean)] })
 }

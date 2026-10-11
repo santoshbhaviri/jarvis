@@ -1,5 +1,5 @@
 // Search: type or say anything. Jarvis shows the latest Google News headlines and Wikipedia
-// right here (free, no key), and a short answer on top once the free Gemini key is added.
+// right here (free, no key), and a short answer on top from Claude (or the free Gemini key).
 // Google itself is one tap away for everything else. Once Jarvis has answered, the box moves
 // under the answer and asks follow-ups in the same conversation; New topic starts afresh.
 import { useState, useEffect, useRef } from 'react'
@@ -16,7 +16,7 @@ const RECENT = 'jarvis-searches'
 const ERRORS = {
   offline: 'No internet connection.',
   busy: 'Too many searches in a short time. Try again in a minute.',
-  bad_key: 'The Gemini key in Netlify was not accepted.',
+  bad_key: 'The AI key was not accepted. Open Evolve and tap Check setup.',
   not_signed_in: 'Please sign out and sign in again.',
 }
 let last = null   // the last search stays when you switch tabs
@@ -47,7 +47,7 @@ export default function SearchTab() {
     show({ ...base, answer: a.error ? null : a.text, answerError: a.error && (a.why || ERRORS[a.error] || null) })
   }
 
-  // A follow-up goes to Gemini with the same news and Wikipedia, and everything said so far
+  // A follow-up goes to the AI with the same news and Wikipedia, and everything said so far
   const followUp = async (f) => {
     setText('')
     const topic = last

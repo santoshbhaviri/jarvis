@@ -1,6 +1,7 @@
 // Shared by the Jarvis server functions (Netlify Functions).
 // Keys live in Netlify → Site configuration → Environment variables, never in the app:
-//   GEMINI_API_KEY      free key from aistudio.google.com (answers inside Jarvis)
+//   GEMINI_API_KEY      free key from aistudio.google.com (answers until Claude is connected)
+//   ANTHROPIC_API_KEY   optional: your Claude key (or paste it in Evolve › Check setup instead)
 //   GITHUB_TOKEN        lets Jarvis send app requests and approve updates
 //   JARVIS_OWNER_EMAIL  your login email; only you can use the functions above
 //   VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY  already there for the app itself

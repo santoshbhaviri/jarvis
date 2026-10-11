@@ -14,9 +14,11 @@ Six tabs. Each has a box to type in. To speak, tap the mic on the phone's keyboa
   - After 8 pm an **evening wrap-up** lists what's left: done, tomorrow or drop, or all to tomorrow in one tap.
 - **Works offline**: Jarvis opens with no signal; tasks you add or tick wait on the phone and sync when you're back online.
 - **🔁 Tracker**: habits you want to keep up every day or a few times a week (gym, walk, reading). Tick today with one tap, see this week and this month at a glance (e.g. "Gym 3/4 this week · 11/17 this month"), and open the month calendar to fill in past days.
-- **🔍 Search**: the latest Google News headlines (India) and a Wikipedia summary, right in the app, free with no key. With the free Gemini key (below) a short answer written from them appears on top. **Google ↗** opens the full Google search.
-- **💬 Assist**: chat like ChatGPT or Gemini. It knows today's tasks, plans your day, writes and polishes letters and messages (send by WhatsApp, SMS or email in one tap), turns what you say into tasks (+ Add) and dials numbers. It is also a GST assistant: the CGST and IGST Acts, CGST Rules, notifications and circulars, show cause notices, orders, appeals and refunds, naming sections and drafting notices, orders and replies (always check the bare Act on cbic-gst.gov.in). Needs the free Gemini key; without it the question opens in ChatGPT or Claude. The chat stays on the phone until **New chat** or sign-out.
-- **🔖 Memory** (button at the top of Assist): your preferences, people, facts about your work, saved answers and documents. Say "remember that …" in Assist, tap the bookmark under any Search or Assist answer, type a note, or **Add a document** (a PDF or photo of a notice or order: Gemini reads it and keeps the key points). Search and Assist read Memory before every answer. Kept on Netlify (Netlify Blobs), per login, no setup; up to 300 notes.
+- **🔍 Search**: the latest Google News headlines (India) and a Wikipedia summary, right in the app, free with no key. With Claude connected (below), or the free Gemini key, a short answer written from them appears on top. **Google ↗** opens the full Google search.
+- **💬 Assist**: chat like ChatGPT or Gemini. It knows today's tasks, plans your day, writes and polishes letters and messages (send by WhatsApp, SMS or email in one tap), turns what you say into tasks (+ Add) and dials numbers. It is also a GST assistant: the CGST and IGST Acts, CGST Rules, notifications and circulars, show cause notices, orders, appeals and refunds, naming sections and drafting notices, orders and replies (always check the bare Act on cbic-gst.gov.in). Answers come from Claude once it is connected, or from the free Gemini key; with neither, the question opens in ChatGPT or Claude. The chat stays on the phone until **New chat** or sign-out.
+- **🔖 Memory** (button at the top of Assist) has two parts, both kept on Netlify (Netlify Blobs) per login, no setup:
+  - **Notes**: your preferences, people, facts about your work, saved answers. Say "remember that …" in Assist, tap the bookmark under any Search or Assist answer, or type a note. Read with every question; up to 300.
+  - **Library**: whole documents, such as the bare CGST Act and Rules, notices, orders and circulars. Add one with the 📎 paperclip in Assist or **Add a document** in Memory: a PDF (its text is read on the phone; scanned pages are read by Claude Haiku, or Gemini, up to 30 per document), a photo, or a text file. For each question Search and Assist find the best-matching passages (by words and by "section 73" / "rule 86A") and the AI answers from them, naming the document and page. Up to 200 documents. A document added in a chat counts first for the rest of that chat.
 - **✨ Evolve**: tell Jarvis what it should do better ("show a weekly summary every Sunday"). Claude picks requests up every hour from 7 am to 11 pm; an update shows here under **Ready to try** with **Try it**, **Approve** (puts it live), **Change** and **Drop**. Claude's answers to your questions show under **Replies from Claude**: **Save** keeps one in Memory, **Delete** takes it off the page (both stay on GitHub). Also lists what is being built and what was added lately. The number on the tab is how many are waiting for you.
 - **✅ Done**: everything you finished, grouped by day. Tasks stay here for **30 days** and are then deleted automatically. Tap ↩ Restore to bring one back to today.
 - **Reminders**: 🔔 in the header turns on a morning summary notification (today's tasks, important ones, carried over).
@@ -96,15 +98,25 @@ All keys go in one place: Netlify → your site → **Site configuration → Env
 
 | Variable | What it switches on | Where to get it |
 |---|---|---|
-| `JARVIS_OWNER_EMAIL` | Only your account can use the two below | Your Jarvis login email |
+| `JARVIS_OWNER_EMAIL` | Only your account can use the keys below and your Claude credit | Your Jarvis login email |
 | `GEMINI_API_KEY` | Assist chats inside Jarvis; Search adds a short answer on top of the headlines | https://aistudio.google.com/apikey → **Create API key** (free, no card). Google's free tier has daily limits and may use what you send to improve its products, so don't send confidential office details. |
 | `GITHUB_TOKEN` | Evolve sends requests straight to Claude and shows what Claude built for you to try, approve (puts it live), change or drop | GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate. Repository access: only `jarvis`. Permissions: Contents, Issues, Pull requests = Read and write. |
 
-Jarvis asks the fast `gemini-flash-lite-latest` first and moves to `gemini-flash-latest` when Google says the first is overloaded or at its free limit. Optional: `GEMINI_MODEL` names a model to try before both. Gemini's free tier can't search Google itself, so the Search tab fetches Google News and Wikipedia first and hands them to Gemini.
+### Claude (paid per use, best answers)
+Claude answers in Search and Assist (Claude Sonnet 5.5) and reads scanned pages and photos (Claude Haiku 5.5). A Claude Pro or Max subscription can't be used by other apps, so Jarvis uses the Claude API, billed separately from prepaid credit:
+1. Go to https://platform.claude.com and sign in (or sign up).
+2. **Billing**: buy credit, for example $10. Leave auto-reload off, so Claude can never spend more than the credit you added.
+3. **API keys → Create key**, then copy it (it starts with `sk-ant-`).
+4. In Jarvis: **Evolve → Check setup**, paste it under **Claude**, tap **Save**. Jarvis tries it before keeping it, stores it in Netlify's own storage (never on the phone), and shows what Claude has cost this month. It only works when `JARVIS_OWNER_EMAIL` is set, so no one else can spend your credit. (`ANTHROPIC_API_KEY` in Netlify works too.)
+
+A typical Assist answer with your Memory and Library costs about ₹3 to ₹4; a Search answer about ₹1; a scanned page well under ₹1. Anthropic doesn't train its models on what the API receives. When Claude is busy, out of credit or its key stops working, the Gemini key (if added) answers that question instead and says why. A very long draft that runs past Netlify's 30-second limit comes back as far as it got; say "continue" for the rest.
+
+### Gemini (free stand-in)
+Jarvis asks the fast `gemini-flash-lite-latest` first and moves to `gemini-flash-latest` when Google says the first is overloaded or at its free limit. Optional: `GEMINI_MODEL` names a model to try before both. Gemini's free tier can't search Google itself, so the Search tab fetches Google News and Wikipedia first and hands them over with the question.
 
 ### How Jarvis learns
 - Tasks you add on several days show up as one-tap suggestions when you tap the Add a task box.
-- What you keep in Memory shapes every Search and Assist answer. Gemini itself isn't retrained; it reads your Memory fresh each time.
+- What you keep in Memory shapes every Search and Assist answer. The AI itself isn't retrained; it reads your notes and the matching Library passages fresh each time, the way ChatGPT and Claude work with files.
 - Bigger changes come from you, in the ✨ Evolve tab. Claude picks them up every hour from 7 am to 11 pm; they appear there to try, and **Approve** puts one live.
 
 Jarvis can open WhatsApp, SMS, email or the dialer with the text ready, but you always tap Send yourself; it cannot operate other apps or phone settings.
