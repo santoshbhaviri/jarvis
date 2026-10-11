@@ -99,7 +99,7 @@ All keys go in one place: Netlify → your site → **Site configuration → Env
 | `GEMINI_API_KEY` | Assist chats inside Jarvis; Search adds a short answer on top of the headlines | https://aistudio.google.com/apikey → **Create API key** (free, no card). Google's free tier has daily limits and may use what you send to improve its products, so don't send confidential office details. |
 | `GITHUB_TOKEN` | Evolve sends requests straight to Claude and shows what Claude built for you to try, approve (puts it live), change or drop | GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate. Repository access: only `jarvis`. Permissions: Contents, Issues, Pull requests = Read and write. |
 
-Optional: `GEMINI_MODEL` picks another Gemini model (default `gemini-flash-latest`). Gemini's free tier can't search Google itself, so the Search tab fetches Google News and Wikipedia first and hands them to Gemini.
+Jarvis asks the fast `gemini-flash-lite-latest` first and moves to `gemini-flash-latest` when Google says the first is overloaded or at its free limit. Optional: `GEMINI_MODEL` names a model to try before both. Gemini's free tier can't search Google itself, so the Search tab fetches Google News and Wikipedia first and hands them to Gemini.
 
 ### How Jarvis learns
 - Tasks you add on several days show up as one-tap suggestions when you tap the Add a task box.

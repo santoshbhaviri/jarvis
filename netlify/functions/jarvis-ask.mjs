@@ -1,8 +1,8 @@
 // The Assist tab: chat with Google Gemini (free tier) inside Jarvis.
-// Needs GEMINI_API_KEY in Netlify. Optional GEMINI_MODEL (default gemini-flash-latest).
+// Needs GEMINI_API_KEY in Netlify. Optional GEMINI_MODEL (tried before Flash-Lite and Flash).
 // The app sends what you said plus today's tasks; the answer can carry tasks to add,
 // a message to send or a number to call, which the app shows as buttons.
-import { env, json, owner, geminiKey, geminiModel, geminiProblem } from '../lib/common.mjs'
+import { env, json, owner, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT } from '../lib/common.mjs'
 
 const SYSTEM = `You are Jarvis, a personal assistant inside a phone app used by a senior government officer in Telangana, India.
 They speak to you by voice, so their words may contain small transcription mistakes; read for meaning.
@@ -57,17 +57,13 @@ export default async (req) => {
     role: t.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: i === recent.length - 1 ? `${context}\n\n${t.text}` : t.text }],
   }))
-  const model = geminiModel()
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
-      contents,
-      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, maxOutputTokens: 8192 },
-    }),
+  const res = await askGemini(key, {
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents,
+    generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, maxOutputTokens: 8192 },
   })
-  if (res.status === 429) return json({ error: 'busy' }, 429)
+  if (!res || res.status >= 500) return json({ error: 'busy', why: GEMINI_BUSY }, 503)
+  if (res.status === 429) return json({ error: 'busy', why: GEMINI_LIMIT }, 429)
   if (!res.ok) {
     const problem = geminiProblem(await res.text())
     return json({ error: problem ? 'bad_key' : 'api', why: problem || `Gemini answered with error ${res.status}. Try again in a minute.` }, 502)

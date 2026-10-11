@@ -1,6 +1,6 @@
 // Setup check: says in plain words whether each key in Netlify works, and how to fix it.
 // It never shows a key. GET → { checks: [{ name, ok, fix }] }
-import { env, json, signedIn, looksLike, geminiKey, geminiModel, geminiProblem, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
+import { env, json, signedIn, looksLike, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
 
 const REPO = env('JARVIS_REPO') || 'santoshbhaviri/jarvis'
 const REACH = (who) => `Couldn't reach ${who} just now. Try again in a minute.`
@@ -22,22 +22,13 @@ async function gemini() {
   const { key, why } = geminiKey()
   if (why) return { name, ok: false, fix: why + ' Paste the Gemini key there instead.' }
   if (!key) return { name, ok: false, fix: 'Add GEMINI_API_KEY in Netlify: a free key from aistudio.google.com/apikey.' }
-  try {
-    // Ask the model Assist uses a one-word question, so "works" here means Assist can answer
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel()}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with the word OK.' }] }] }),
-      signal: AbortSignal.timeout(15000),
-    })
-    if (res.ok) return { name, ok: true }
-    const detail = await res.text()
-    if (res.status === 429) return { name, ok: false, fix: "The key works, but Google's free limit is used up for now. Search and Assist will answer again later (the limit resets daily)." }
-    if (res.status === 404) return { name, ok: false, fix: env('GEMINI_MODEL')
-      ? `Google doesn't offer the model "${geminiModel()}" to this key. Remove GEMINI_MODEL in Netlify to use the standard one.`
-      : `Google doesn't offer "${geminiModel()}" to this key just now. Try again later.` }
-    return { name, ok: false, fix: geminiProblem(detail) || `Google answered with error ${res.status}. Try again in a minute.` }
-  } catch { return { name, ok: false, fix: REACH('Google') } }
+  // Ask a one-word question the way Assist does, so "works" here means Assist can answer
+  const res = await askGemini(key, { contents: [{ role: 'user', parts: [{ text: 'Reply with the word OK.' }] }] }, 15000)
+  if (res?.ok) return { name, ok: true }
+  if (!res || res.status >= 500) return { name, ok: false, fix: 'The key is fine. ' + GEMINI_BUSY }
+  if (res.status === 429) return { name, ok: false, fix: 'The key is fine. ' + GEMINI_LIMIT }
+  if (res.status === 404) return { name, ok: false, fix: "Google doesn't offer its Flash models to this key just now. Try again later." }
+  return { name, ok: false, fix: geminiProblem(await res.text()) || `Google answered with error ${res.status}. Try again in a minute.` }
 }
 
 async function github() {
