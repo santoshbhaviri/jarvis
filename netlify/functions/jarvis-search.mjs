@@ -2,7 +2,7 @@
 //   GET ?q=…                 → latest Google News headlines and a Wikipedia summary
 //   POST {q, news, wiki}     → a short answer written from those by Gemini (needs GEMINI_API_KEY)
 // Gemini's free tier can't search Google itself, so Jarvis fetches the news first and hands it over.
-import { env, json, owner, geminiKey, geminiProblem } from '../lib/common.mjs'
+import { env, json, owner, geminiKey, geminiModel, geminiProblem } from '../lib/common.mjs'
 
 const UA = 'Jarvis personal assistant (https://github.com/santoshbhaviri/jarvis)'
 const STOP = new Set('what who whom whose why how when where which is are was were the a an of in on for to and or about latest news today update updates tell me give show find search please jarvis does did can could should would'.split(' '))
@@ -67,7 +67,7 @@ export default async (req) => {
     w ? `Wikipedia, "${w.title}": ${String(w.extract).slice(0, 1500)}` : '',
   ].filter(Boolean).join('\n\n')
 
-  const model = env('GEMINI_MODEL') || 'gemini-flash-latest'
+  const model = geminiModel()
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },

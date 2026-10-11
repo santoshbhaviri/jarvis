@@ -2,7 +2,9 @@
 // The check runs on Jarvis's server, so no key ever reaches the phone.
 import { useState, useEffect, useCallback } from 'react'
 import { CircleCheck, CircleAlert, RotateCw } from 'lucide-react'
+import { format } from 'date-fns'
 import { checkSetup } from '../lib/server'
+import { BUILT } from '../lib/constants'
 import styles from './SetupCheck.module.css'
 
 export default function SetupCheck() {
@@ -43,6 +45,7 @@ export default function SetupCheck() {
       {checks?.some(c => !c.ok) && (
         <p className={styles.muted}>After changing a key in Netlify, open Deploys, tap Trigger deploy, wait for Published, then tap Check again.</p>
       )}
+      <p className={styles.muted}>This Jarvis: {location.hostname}, updated {format(BUILT, 'd MMM, h:mm a')}</p>
     </section>
   )
 }

@@ -16,3 +16,12 @@
   display: inline-block; font-size: 12px; font-weight: 600; color: var(--text2);
   background: var(--surface2); border-radius: 99px; padding: 5px 12px; margin-bottom: 12px;
 }
+
+.testCopy {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  font-size: 12.5px; line-height: 1.4; text-align: center;
+  padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
+  background: var(--surface); color: var(--text);
+  border-top: 2px solid var(--gold); box-shadow: var(--shadow);
+}
+.testCopy a { color: var(--accent); font-weight: 600; text-decoration: underline; }

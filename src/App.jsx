@@ -13,6 +13,7 @@ import SearchTab     from './components/SearchTab'
 import AssistTab     from './components/AssistTab'
 import EvolveTab     from './components/EvolveTab'
 import { isReady, listUpdates } from './lib/server'
+import { HOME, isTestCopy } from './lib/constants'
 import EditTaskModal from './components/EditTaskModal'
 import InstallBanner from './components/InstallBanner'
 import LoginScreen   from './components/LoginScreen'
@@ -23,9 +24,25 @@ export default function App() {
   const { isDark, toggle } = useTheme()
 
   if (auth.session === undefined) return null   // checking saved login
-  if (!auth.session) return <LoginScreen onSignIn={auth.signIn} onSignUp={auth.signUp} />
-  // key: a different account gets a fresh task list
-  return <Workspace key={auth.user.id} isDark={isDark} onToggleTheme={toggle} onSignOut={auth.signOut} />
+  return (
+    <>
+      {isTestCopy && <TestCopy />}
+      {!auth.session
+        ? <LoginScreen onSignIn={auth.signIn} onSignUp={auth.signUp} />
+        // key: a different account gets a fresh task list
+        : <Workspace key={auth.user.id} isDark={isDark} onToggleTheme={toggle} onSignOut={auth.signOut} />}
+    </>
+  )
+}
+
+// An update preview looks just like Jarvis but never changes again, so a home-screen icon
+// made from one stays stuck on that version. Say so on every screen.
+function TestCopy() {
+  return (
+    <p className={styles.testCopy}>
+      Test copy of one update. Your Jarvis is <a href={`https://${HOME}`}>{HOME}</a>
+    </p>
+  )
 }
 
 function Workspace({ isDark, onToggleTheme, onSignOut }) {

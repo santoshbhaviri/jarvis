@@ -3,7 +3,7 @@
 A dark-themed, mobile-first productivity app you install on your phone. Two goals: work on what matters most, and never lose track of anything.
 
 ## Features
-Six tabs. Each has a box to type in; the 🎙 in the box lets you speak instead.
+Six tabs. Each has a box to type in. To speak, tap the mic on the phone's keyboard (on iPhone, set Settings → General → Keyboard → Dictation on). A copy opened from an update's "Try it" link says it's a test copy; add Jarvis to the home screen only from drjarvis.netlify.app.
 
 - **Add a task** (top of Today): "On 21st call the DEO and send the survey report, also book train tickets tomorrow" → three tasks, each on its day. Understands today, tomorrow, Friday, 15 Oct, on 21st, in 3 days, next week/month; "every day" makes a Tracker habit. Undo is one tap.
 - **Repeating tasks**: "Every Monday submit report", "pay rent on the 1st of every month", "every 3 days". Tick one and the next is added (shown as ↻ on the task).

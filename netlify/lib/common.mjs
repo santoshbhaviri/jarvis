@@ -45,6 +45,9 @@ export function geminiKey() {
   return { key }
 }
 
+// Search, Assist and the Setup check all ask the same model
+export const geminiModel = () => env('GEMINI_MODEL') || 'gemini-flash-latest'
+
 // Google's reason for refusing a Gemini call, in plain words ('' when it isn't about the key)
 export function geminiProblem(detail) {
   const d = String(detail || '')

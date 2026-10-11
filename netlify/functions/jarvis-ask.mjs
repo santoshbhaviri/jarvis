@@ -2,7 +2,7 @@
 // Needs GEMINI_API_KEY in Netlify. Optional GEMINI_MODEL (default gemini-flash-latest).
 // The app sends what you said plus today's tasks; the answer can carry tasks to add,
 // a message to send or a number to call, which the app shows as buttons.
-import { env, json, owner, geminiKey, geminiProblem } from '../lib/common.mjs'
+import { env, json, owner, geminiKey, geminiModel, geminiProblem } from '../lib/common.mjs'
 
 const SYSTEM = `You are Jarvis, a personal assistant inside a phone app used by a senior government officer in Telangana, India.
 They speak to you by voice, so their words may contain small transcription mistakes; read for meaning.
@@ -57,7 +57,7 @@ export default async (req) => {
     role: t.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: i === recent.length - 1 ? `${context}\n\n${t.text}` : t.text }],
   }))
-  const model = env('GEMINI_MODEL') || 'gemini-flash-latest'
+  const model = geminiModel()
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
