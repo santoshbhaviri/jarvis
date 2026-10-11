@@ -1,10 +1,11 @@
 // Search: type or say anything. Jarvis shows the latest Google News headlines and Wikipedia
 // right here (free, no key), and a short answer on top once the free Gemini key is added.
-// Google itself is one tap away for everything else.
-import { useState } from 'react'
+// Google itself is one tap away for everything else. Once Jarvis has answered, the box moves
+// under the answer and asks follow-ups in the same conversation; New topic starts afresh.
+import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { formatDistanceToNowStrict } from 'date-fns'
-import { Volume2, Copy, ArrowUpRight, Sparkles, Clock } from 'lucide-react'
+import { Volume2, Copy, ArrowUpRight, Sparkles, Clock, SquarePen } from 'lucide-react'
 import { searchWeb, searchAnswer } from '../lib/server'
 import { googleLink } from '../lib/assistant'
 import CommandBox from './CommandBox'
@@ -25,8 +26,12 @@ const ago = (d) => { try { return formatDistanceToNowStrict(new Date(d), { addSu
 
 export default function SearchTab() {
   const [text, setText] = useState('')
-  const [res, setRes]   = useState(last)   // { q, news, wiki, answer, thinking, error }
+  const [res, setRes]   = useState(last)   // { q, news, wiki, answer, thinking, error, more: [{ q, answer, thinking, error }] }
   const show = (r) => { last = r; setRes(r) }
+  const latest = useRef(null)
+  const asking = res?.more?.some(m => m.thinking)
+  const canFollow = !!res?.answer
+  useEffect(() => { latest.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, [res?.more?.length])
 
   const search = async (q) => {
     remember(q); setText('')
@@ -39,6 +44,22 @@ export default function SearchTab() {
     const a = await searchAnswer(q, found)
     if (last?.q !== q) return   // a newer search started meanwhile
     show({ ...base, answer: a.error ? null : a.text, answerError: a.error && (a.why || ERRORS[a.error] || null) })
+  }
+
+  // A follow-up goes to Gemini with the same news and Wikipedia, and everything said so far
+  const followUp = async (f) => {
+    setText('')
+    const topic = last
+    const turns = [
+      { role: 'user', text: topic.q }, { role: 'assistant', text: topic.answer },
+      ...(topic.more || []).filter(m => m.answer).flatMap(m => [{ role: 'user', text: m.q }, { role: 'assistant', text: m.answer }]),
+      { role: 'user', text: f },
+    ]
+    show({ ...topic, more: [...(topic.more || []), { q: f, thinking: true }] })
+    const a = await searchAnswer(topic.q, topic, turns)
+    if (last?.q !== topic.q || !last.more) return   // New topic meanwhile
+    show({ ...last, more: last.more.map((m, i) => i < last.more.length - 1 ? m
+      : { q: f, answer: a.error ? null : a.text, error: a.error && (a.why || ERRORS[a.error] || 'Could not answer. Try again.') }) })
   }
 
   const speak = (s) => {
@@ -54,7 +75,7 @@ export default function SearchTab() {
 
   return (
     <div className={styles.tab}>
-      <CommandBox value={text} onChange={setText} onSubmit={search} placeholder="Search anything…" label="Search" />
+      {!canFollow && <CommandBox value={text} onChange={setText} onSubmit={search} placeholder="Search anything…" label="Search" />}
 
       {!res && recent().length > 0 && (
         <div className={styles.recent}>
@@ -88,6 +109,34 @@ export default function SearchTab() {
             </div>
           )}
           {res.answerError && <p className={styles.muted}>{res.answerError}</p>}
+
+          {res.more?.map((m, i) => (
+            <div key={i} className={styles.turn} ref={i === res.more.length - 1 ? latest : null}>
+              <div className={styles.me}>{m.q}</div>
+              {m.error
+                ? <p className={styles.muted}>{m.error}</p>
+                : (
+                  <div className={styles.answer}>
+                    {m.answer
+                      ? <>
+                          <p>{m.answer}</p>
+                          <div className={styles.tools}>
+                            <button onClick={() => speak(m.answer)} aria-label="Read aloud"><Volume2 size={16} /></button>
+                            <button onClick={() => copy(m.answer)} aria-label="Copy answer"><Copy size={15} /></button>
+                          </div>
+                        </>
+                      : <p className={styles.muted}>Thinking…</p>}
+                  </div>
+                )}
+            </div>
+          ))}
+
+          {canFollow && (
+            <div className={styles.follow}>
+              <CommandBox value={text} onChange={setText} onSubmit={followUp} busy={asking} placeholder="Ask a follow-up…" label="Follow-up question" />
+              <button className={styles.fresh} onClick={() => show(null)}><SquarePen size={15} />New topic</button>
+            </div>
+          )}
 
           {res.news?.length > 0 && <div className={styles.label}>Latest news</div>}
           {res.news?.length > 0 && (

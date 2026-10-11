@@ -41,7 +41,8 @@ async function wiki(q) {
 }
 
 const SYSTEM = `You are Jarvis, the search assistant in a phone app used by a senior government officer in Telangana, India.
-Answer the question in 2 to 5 short sentences of plain text (no markdown, no headings), leading with the answer.
+Answer the question in 2 to 5 short sentences of plain text (no markdown, no headings), leading with the answer. Go longer only when they ask for detail.
+They may ask follow-up questions about your answer; answer those as a continuation of the same conversation.
 Use the news headlines and Wikipedia text given with the question when they are relevant, and say which source and how recent.
 If they don't answer it, answer from your own knowledge and say it may be out of date, or say plainly that you don't know and that Google has more.
 Never invent facts, figures, GO numbers or dates.`
@@ -59,7 +60,8 @@ export default async (req) => {
   const { key, why } = geminiKey()
   if (why) return json({ error: 'bad_key', why }, 503)
   if (!key) return json({ error: 'not_configured' }, 503)
-  const { q = '', news: found = [], wiki: w = null } = await req.json()
+  // turns: the conversation so far when you ask a follow-up ([{ role, text }], ending with yours)
+  const { q = '', news: found = [], wiki: w = null, turns = [] } = await req.json()
   if (!q.trim()) return json({ error: 'empty' }, 400)
   const sources = [
     `Today is ${new Date().toDateString()}.`,
@@ -69,7 +71,13 @@ export default async (req) => {
 
   const res = await askGemini(key, {
     systemInstruction: { parts: [{ text: SYSTEM }] },
-    contents: [{ role: 'user', parts: [{ text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` }] }],
+    contents: [
+      { role: 'user', parts: [{ text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` }] },
+      // The first question carries the sources; later turns follow it (the last 12 at most)
+      ...turns.slice(1).slice(-12).filter(t => t.text?.trim()).map(t => ({
+        role: t.role === 'assistant' ? 'model' : 'user', parts: [{ text: String(t.text).slice(0, 4000) }],
+      })),
+    ],
     generationConfig: { maxOutputTokens: 4096 },
   })
   if (!res || res.status >= 500) return json({ error: 'busy', why: GEMINI_BUSY }, 503)
