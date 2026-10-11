@@ -6,7 +6,7 @@
 //   POST {action:'drop', number}    → throws that update away
 // Needs GITHUB_TOKEN (fine-grained, this repo only: Contents, Issues, Pull requests = read & write)
 // and JARVIS_OWNER_EMAIL in Netlify.
-import { env, json, owner } from '../lib/common.mjs'
+import { env, json, owner, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
 
 const REPO = env('JARVIS_REPO') || 'santoshbhaviri/jarvis'
 const SITE = env('JARVIS_SITE') || 'drjarvis'
@@ -20,6 +20,7 @@ async function gh(path, { method = 'GET', body } = {}) {
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       'User-Agent': 'jarvis-app',
+      ...(body && { 'Content-Type': 'application/json' }),   // GitHub turns away bodies sent as plain text
     },
     body: body && JSON.stringify(body),
   })
@@ -32,7 +33,7 @@ async function gh(path, { method = 'GET', body } = {}) {
 async function markReady(nodeId) {
   await fetch('https://api.github.com/graphql', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${env('GITHUB_TOKEN')}`, 'User-Agent': 'jarvis-app' },
+    headers: { Authorization: `Bearer ${env('GITHUB_TOKEN')}`, 'User-Agent': 'jarvis-app', 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: 'mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){clientMutationId}}', variables: { id: nodeId } }),
   })
 }
@@ -100,8 +101,9 @@ export default async (req) => {
     }
     return json({ error: 'bad_request' }, 400)
   } catch (err) {
-    if (err.status === 401) return json({ error: 'bad_key' }, 502)
+    if (err.status === 401) return json({ error: 'bad_key', why: GITHUB_BAD }, 502)
+    if (err.status === 403 || err.status === 404) return json({ error: 'bad_key', why: GITHUB_NO_ACCESS }, 502)
     if (err.status === 405 || err.status === 409) return json({ error: 'not_mergeable' }, 409)
-    return json({ error: 'api', detail: err.message }, 502)
+    return json({ error: 'api', why: `GitHub said: ${err.message}` }, 502)
   }
 }

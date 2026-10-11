@@ -1,8 +1,7 @@
 // Helpers for the Search, Assist and Evolve tabs: today's tasks as context for a question,
-// and links that open a question in Google, ChatGPT or Claude, or a change request on GitHub.
+// and links that open a question in Google, ChatGPT or Claude.
 import { format } from 'date-fns'
 import { todayStr } from './dateUtils'
-import { REPO_URL } from './constants'
 
 // What Jarvis knows about your day, sent along with a question
 export function dayContext(tasks, isRoutineDone) {
@@ -28,11 +27,3 @@ const withDay = (q, ctx) => aboutMyDay(q) && ctx ? `${q}\n\n(From my task app:\n
 export const googleLink  = (q, ctx) => `https://www.google.com/search?udm=50&q=${encodeURIComponent(withDay(q, ctx))}`
 export const chatgptLink = (q, ctx) => `https://chatgpt.com/?q=${encodeURIComponent(withDay(q, ctx))}`
 export const claudeLink  = (q, ctx) => `https://claude.ai/new?q=${encodeURIComponent(withDay(q, ctx))}`
-
-// A change to Jarvis itself becomes a GitHub request; Claude builds it every morning
-export function improveLink(idea) {
-  const q = idea.trim()
-  const title = q.length > 70 ? q.slice(0, 67) + '…' : q
-  const body = `${q}\n\n---\nSent from Jarvis. Claude: please build this, open a pull request with a preview link, and comment here.`
-  return `${REPO_URL}/issues/new?title=${encodeURIComponent('[Jarvis] ' + title)}&body=${encodeURIComponent(body)}`
-}

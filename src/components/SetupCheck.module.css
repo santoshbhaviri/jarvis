@@ -1,0 +1,21 @@
+.card { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.title { font-family: var(--font-serif); font-size: 22px; line-height: 1.15; }
+.again {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  padding: 7px 13px; border-radius: 99px; font-size: 12.5px; font-weight: 600;
+  background: var(--surface); color: var(--accent); border: 1px solid var(--border2);
+}
+.again:disabled { opacity: 0.6; }
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+.rows { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.rows li { display: flex; gap: 10px; align-items: flex-start; }
+.rows li svg { flex-shrink: 0; margin-top: 1px; }
+.ok { color: var(--done); }
+.bad { color: var(--gold); }
+.name { font-size: 14.5px; font-weight: 600; }
+.works { font-weight: 400; color: var(--text3); }
+.fix { font-size: 13px; color: var(--text2); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
+.muted { font-size: 12.5px; color: var(--text3); line-height: 1.45; }

@@ -45,7 +45,7 @@ export default function AssistTab({ taskData }) {
     const res = await askJarvis(next.filter(t => !t.error).slice(-10).map(({ role, text }) => ({ role, text })), ctx)
     setWaiting(false)
     setTurns(prev => [...prev, res.error
-      ? { role: 'assistant', text: ERRORS[res.error] || 'Something went wrong. Please try again.', error: true }
+      ? { role: 'assistant', text: res.why || ERRORS[res.error] || 'Something went wrong. Please try again.', error: true }
       : { role: 'assistant', text: res.text, actions: res.actions }])
   }
 

@@ -38,7 +38,7 @@ export default function SearchTab() {
     if (!found.answers) return
     const a = await searchAnswer(q, found)
     if (last?.q !== q) return   // a newer search started meanwhile
-    show({ ...base, answer: a.error ? null : a.text, answerError: a.error && (ERRORS[a.error] || null) })
+    show({ ...base, answer: a.error ? null : a.text, answerError: a.error && (a.why || ERRORS[a.error] || null) })
   }
 
   const speak = (s) => {
