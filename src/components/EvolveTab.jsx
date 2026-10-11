@@ -1,19 +1,21 @@
-// Evolve: tell Jarvis what it should do better. Claude builds it (every morning), it shows up
-// here to try, and Approve puts it live. Nothing changes without your Approve.
+// Evolve: tell Jarvis what it should do better. Claude builds it (every few hours), it shows up
+// here to try, and Approve puts it live. Nothing changes without your Approve. Claude's answers
+// to your requests show here too.
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { formatDistanceToNowStrict } from 'date-fns'
-import { Check, ArrowUpRight, Wrench } from 'lucide-react'
+import { Check, ArrowUpRight, Wrench, Sparkles } from 'lucide-react'
 import { sendRequest, approveUpdate, changeUpdate, dropUpdate } from '../lib/server'
 import CommandBox from './CommandBox'
 import SectionHeader from './SectionHeader'
 import SetupCheck from './SetupCheck'
 import styles from './EvolveTab.module.css'
 
-const ago = (d) => { try { return formatDistanceToNowStrict(new Date(d), { addSuffix: true }) } catch { return '' } }
+// GitHub's clock can be a few seconds ahead of the phone's
+const ago = (d) => { try { return new Date(d) > Date.now() ? 'just now' : formatDistanceToNowStrict(new Date(d), { addSuffix: true }) } catch { return '' } }
 
-export default function EvolveTab({ data, ready, onChanged }) {
-  const { updates = [], building = [], done = [] } = data || {}
+export default function EvolveTab({ data, ready, onChanged, seen = '' }) {
+  const { updates = [], building = [], done = [], replies = [] } = data || {}
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [checking, setChecking] = useState(false)
@@ -30,11 +32,11 @@ export default function EvolveTab({ data, ready, onChanged }) {
     setBusy(false)
     if (res.error) { toast.error(res.why || 'Could not send. Try again.', { duration: 6000 }); if (res.why) setChecking(true); return }
     setText('')
-    toast.success('Sent to Claude. It shows up here to try, usually by next morning.', { duration: 5000 })
+    toast.success('Sent to Claude. Its answer or the update shows up here.', { duration: 5000 })
     onChanged()
   }
 
-  const empty = !updates.length && !building.length && !done.length
+  const empty = !updates.length && !building.length && !done.length && !replies.length
 
   return (
     <div className={styles.tab}>
@@ -46,6 +48,23 @@ export default function EvolveTab({ data, ready, onChanged }) {
         <section>
           <SectionHeader label="Ready to try" count={updates.length} accent="var(--accent)" />
           <div className={styles.list}>{updates.map(u => <Update key={u.number} u={u} onChanged={onChanged} />)}</div>
+        </section>
+      )}
+      {replies.length > 0 && (
+        <section>
+          <SectionHeader label="Replies from Claude" count={replies.length} accent="var(--gold)" />
+          <div className={styles.list}>
+            {replies.map(r => (
+              <div key={r.id} className={styles.reply}>
+                <div className={styles.replyHead}>
+                  <span className={styles.on}>{r.request}</span>
+                  {r.at > seen && <span className={styles.new}>New</span>}
+                </div>
+                <div className={styles.replyText}><Sparkles size={14} /><p>{r.text}</p></div>
+                <small>{ago(r.at)}</small>
+              </div>
+            ))}
+          </div>
         </section>
       )}
       {building.length > 0 && (

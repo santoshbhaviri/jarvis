@@ -26,3 +26,15 @@
 .rows li + li { border-top: 1px solid var(--border); }
 .rows small { color: var(--text3); font-size: 12px; white-space: nowrap; }
 .check { align-self: center; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 7px 13px; border-radius: 99px; font-size: 12.5px; font-weight: 600; background: none; color: var(--text3); border: 1px solid var(--border2); }
+.reply {
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: var(--radius-lg);
+  padding: 13px 16px; display: flex; flex-direction: column; gap: 8px;
+  background-image: linear-gradient(180deg, var(--gold-soft), transparent 60px);
+}
+.replyHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.on { font-size: 12.5px; color: var(--text3); line-height: 1.4; min-width: 0; overflow-wrap: anywhere; }
+.new { flex-shrink: 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--star-text); }
+.replyText { display: flex; gap: 9px; align-items: flex-start; }
+.replyText svg { flex-shrink: 0; margin-top: 4px; color: var(--star-text); }
+.replyText p { font-size: 15px; line-height: 1.55; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply small { color: var(--text3); font-size: 12px; }

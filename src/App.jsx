@@ -19,6 +19,8 @@ import InstallBanner from './components/InstallBanner'
 import LoginScreen   from './components/LoginScreen'
 import styles        from './App.module.css'
 
+const SEEN = 'jarvis-replies-seen'   // when you last read Claude's replies in Evolve
+
 export default function App() {
   const auth = useAuth()
   const { isDark, toggle } = useTheme()
@@ -58,8 +60,27 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
     const res = await listUpdates()
     if (!res.error) setUpdates(res)
   }, [])
-  useEffect(() => { loadUpdates() }, [loadUpdates])
+  useEffect(() => {
+    loadUpdates()
+    // Coming back to Jarvis picks up Claude's new replies and updates
+    const back = () => { if (document.visibilityState === 'visible') loadUpdates() }
+    document.addEventListener('visibilitychange', back)
+    return () => document.removeEventListener('visibilitychange', back)
+  }, [loadUpdates])
   const waiting = updates?.updates?.length || 0
+
+  // Replies you haven't seen count on the Evolve tab until you open it. `shown` keeps the
+  // earlier mark while you're on the tab, so the new ones stay marked New there.
+  const [seen, setSeen]   = useState(() => { try { return localStorage.getItem(SEEN) || '' } catch { return '' } })
+  const [shown, setShown] = useState(seen)
+  const newest = updates?.replies?.[0]?.at || ''
+  const unseen = (updates?.replies || []).filter(r => r.at > seen).length
+  useEffect(() => {
+    if (activeTab !== 'evolve') { setShown(seen); return }
+    if (!newest || newest <= seen) return
+    setShown(seen); setSeen(newest)
+    try { localStorage.setItem(SEEN, newest) } catch { /* private mode */ }
+  }, [activeTab, newest, seen])
 
   const taskData  = useTasks()
   const reminders = useReminders(taskData.tasks, taskData.loading)
@@ -70,7 +91,7 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
   return (
     <div className={styles.app}>
       <Header isDark={isDark} onToggleTheme={onToggleTheme} reminders={reminders} onSignOut={onSignOut} />
-      <TabNav active={activeTab} onChange={setActiveTab} badges={{ evolve: waiting }} />
+      <TabNav active={activeTab} onChange={setActiveTab} badges={{ evolve: waiting + unseen }} />
 
       <main className={styles.main}>
         {activeTab === 'today' && <InstallBanner />}
@@ -84,7 +105,7 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
         {activeTab === 'tracker' && <TrackerTab taskData={taskData} onEdit={setEditing} />}
         {activeTab === 'search'  && <SearchTab />}
         {activeTab === 'assist'  && <AssistTab  taskData={taskData} />}
-        {activeTab === 'evolve'  && <EvolveTab  data={updates} ready={ghReady} onChanged={loadUpdates} />}
+        {activeTab === 'evolve'  && <EvolveTab  data={updates} ready={ghReady} onChanged={loadUpdates} seen={shown} />}
         {activeTab === 'done'    && <DoneTab    taskData={taskData} />}
       </main>
 
