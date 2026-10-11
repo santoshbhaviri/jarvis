@@ -7,6 +7,18 @@
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .results { display: flex; flex-direction: column; gap: 12px; }
+.follow { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 6px; }
+.fresh {
+  align-self: flex-end; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); color: var(--text2); border: 1px solid var(--border2);
+  font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 99px;
+}
+.turn { display: flex; flex-direction: column; gap: 8px; scroll-margin: 140px; }
+.me {
+  align-self: flex-end; max-width: 88%; padding: 10px 15px; border-radius: 20px; border-bottom-right-radius: 6px;
+  background: var(--accent); color: var(--on-accent); font-size: 15px; line-height: 1.5;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
 .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .q { font-family: var(--font-serif); font-weight: 400; font-size: 26px; line-height: 1.1; min-width: 0; overflow-wrap: anywhere; }
 .google {
