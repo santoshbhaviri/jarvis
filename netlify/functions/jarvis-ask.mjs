@@ -4,8 +4,8 @@
 // your Library (documents kept in full) go in too. The answer can carry
 // tasks to add, a message or draft to send, a number to call or something to remember, which the
 // app shows as buttons.
-import { json, owner, geminiKey } from '../lib/common.mjs'
-import { askAI, aiReady } from '../lib/ai.mjs'
+import { env, json, owner, geminiKey } from '../lib/common.mjs'
+import { askAI, aiReady, claudeKey } from '../lib/ai.mjs'
 import { memoryFor } from '../lib/memory.mjs'
 import { libraryFor } from '../lib/library.mjs'
 
@@ -64,7 +64,11 @@ const MORE = '(I ran out of time here. Say "continue" for the rest.)'
 
 export default async (req) => {
   const began = Date.now()
-  if (req.method === 'GET') return json({ ready: await aiReady() })
+  // connect: no Claude key yet and Jarvis can keep one, so Assist shows the box for pasting it
+  if (req.method === 'GET') {
+    const { key } = await claudeKey()
+    return json({ ready: !!(key || geminiKey().key), connect: !key && !!env('JARVIS_OWNER_EMAIL') })
+  }
   const user = await owner(req)
   if (!user) return json({ error: 'not_signed_in' }, 401)
   if (!(await aiReady())) {

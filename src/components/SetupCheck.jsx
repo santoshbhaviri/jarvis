@@ -1,7 +1,7 @@
 // Setup check: each key, whether it works, and the one thing to do if it doesn't.
 // The check runs on Jarvis's server, so no key ever reaches the phone. The Claude row has a box
 // for pasting your Claude key and shows what Claude has cost this month.
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { CircleCheck, CircleAlert, RotateCw } from 'lucide-react'
 import { format } from 'date-fns'
@@ -9,9 +9,12 @@ import { checkSetup, connectClaude, disconnectClaude } from '../lib/server'
 import { BUILT } from '../lib/constants'
 import styles from './SetupCheck.module.css'
 
-export default function SetupCheck() {
+// scroll: opened from a button lower down the page, so bring the card into view once it has loaded
+export default function SetupCheck({ scroll = false }) {
   const [checks, setChecks] = useState(null)
   const [busy, setBusy] = useState(false)
+  const ref = useRef(null)
+  const shown = useRef(false)
 
   const run = useCallback(async () => {
     setBusy(true)
@@ -22,9 +25,14 @@ export default function SetupCheck() {
       : res.checks)
   }, [])
   useEffect(() => { run() }, [run])
+  useEffect(() => {
+    if (!scroll || !checks || shown.current) return
+    shown.current = true
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [scroll, checks])
 
   return (
-    <section className={styles.card} aria-label="Setup check">
+    <section ref={ref} className={styles.card} aria-label="Setup check">
       <div className={styles.head}>
         <span className={styles.title}>Setup check</span>
         <button className={styles.again} onClick={run} disabled={busy}><RotateCw size={14} className={busy ? styles.spin : ''} />Check again</button>
@@ -55,8 +63,9 @@ export default function SetupCheck() {
   )
 }
 
-// Paste the key from platform.claude.com (API keys); Jarvis tries it before keeping it
-function ClaudeKey({ onDone }) {
+// Paste the key from platform.claude.com (API keys); Jarvis tries it before keeping it.
+// Assist shows this box too until Claude is connected.
+export function ClaudeKey({ onDone }) {
   const [key, setKey] = useState('')
   const [saving, setSaving] = useState(false)
   const save = async (e) => {

@@ -1,4 +1,4 @@
-.card { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.card { scroll-margin-top: calc(124px + env(safe-area-inset-top)); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .title { font-family: var(--font-serif); font-size: 22px; line-height: 1.15; }
 .again {

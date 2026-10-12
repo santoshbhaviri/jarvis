@@ -1,6 +1,10 @@
 .tab { display: flex; flex-direction: column; gap: 14px; }
 .thread { display: flex; flex-direction: column; gap: 10px; }
 .bar { display: flex; justify-content: space-between; gap: 8px; }
+.connect { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: var(--radius-lg); padding: 14px 16px; }
+.connectHead { display: flex; align-items: center; gap: 8px; font-family: var(--font-serif); font-size: 20px; line-height: 1.15; }
+.connectHead svg { color: var(--gold); flex-shrink: 0; }
+.connect p { font-size: 13.5px; color: var(--text2); line-height: 1.45; margin-top: 6px; }
 .fresh {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--surface); color: var(--text2); border: 1px solid var(--border2);

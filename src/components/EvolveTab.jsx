@@ -44,7 +44,7 @@ export default function EvolveTab({ data, ready, onChanged, seen = '' }) {
     <div className={styles.tab}>
       <CommandBox value={text} onChange={setText} onSubmit={send} busy={busy}
         placeholder="What should Jarvis do better?" label="Change request" />
-      {(ready === false || checking) && <SetupCheck />}
+      {ready === false && <SetupCheck />}
 
       {updates.length > 0 && (
         <section>
@@ -78,7 +78,9 @@ export default function EvolveTab({ data, ready, onChanged, seen = '' }) {
         </section>
       )}
       {ready && empty && <p className={styles.note}>Your ideas show up here while Claude builds them.</p>}
-      {ready && !checking && <button className={styles.check} onClick={() => setChecking(true)}><Wrench size={14} />Check setup</button>}
+      {ready && (checking
+        ? <SetupCheck scroll />   // opens right where you tapped
+        : <button className={styles.check} onClick={() => setChecking(true)}><Wrench size={14} />Check setup</button>)}
     </div>
   )
 }
