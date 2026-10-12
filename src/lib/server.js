@@ -18,6 +18,8 @@ async function call(name, { method = 'GET', body, query = '' } = {}) {
 
 // Is a feature switched on (its key added)?
 export const isReady = async (name) => (await call(name, { query: '?ping' })).ready === true
+// Assist: an AI connected (ready), and whether to offer the Claude paste box (connect)
+export const assistStatus = () => call('jarvis-ask', { query: '?ping' })
 
 export const askJarvis    = (turns, context, docs) => call('jarvis-ask', { method: 'POST', body: { turns, context, docs } })
 export const listUpdates  = () => call('jarvis-github')

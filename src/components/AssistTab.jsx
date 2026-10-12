@@ -3,17 +3,18 @@
 // It knows GST law and drafts notices, orders and replies, and reads your Memory before answering;
 // "remember …" saves a note there straight away. The paperclip adds a document (PDF, photo or text)
 // to your Library in full; the next questions in this chat look in it first.
-// Claude answers once it is connected (Evolve, Check setup), or the free Gemini key until then;
-// with neither, your question opens in ChatGPT or Claude.
+// Claude answers once it is connected (paste the key in the box at the top, or Evolve, Check setup),
+// or the free Gemini key until then; with neither, your question opens in ChatGPT or Claude.
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
-import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen, BookMarked, FileText } from 'lucide-react'
-import { askJarvis, isReady, addMemory } from '../lib/server'
+import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen, BookMarked, FileText, KeyRound } from 'lucide-react'
+import { askJarvis, isReady, assistStatus, addMemory } from '../lib/server'
 import { dayContext, chatgptLink, claudeLink, googleLink } from '../lib/assistant'
 import { todayStr } from '../lib/dateUtils'
 import { ACCEPT } from '../lib/library'
 import { useAddDocument } from '../hooks/useAddDocument'
+import { ClaudeKey } from './SetupCheck'
 import CommandBox from './CommandBox'
 import MemoryPanel from './MemoryPanel'
 import SaveButton from './SaveButton'
@@ -38,6 +39,7 @@ const saveDocs = (d) => { try { localStorage.setItem(DOCS, JSON.stringify(d)) } 
 export default function AssistTab({ taskData }) {
   const { tasks, addTask, isRoutineDone } = taskData
   const [inApp, setInApp]     = useState(null)       // Claude or Gemini connected (null = checking)
+  const [connect, setConnect] = useState(false)      // no Claude key yet: show the box for pasting it
   const [turns, setTurns]     = useState(loadChat)
   const [text, setText]       = useState('')
   const [waiting, setWaiting] = useState(false)
@@ -48,7 +50,7 @@ export default function AssistTab({ taskData }) {
   const endRef = useRef(null)
   const ctx = dayContext(tasks, isRoutineDone)
 
-  useEffect(() => { isReady('jarvis-ask').then(setInApp) }, [])
+  useEffect(() => { assistStatus().then(s => { setInApp(s.ready === true); setConnect(s.connect === true) }) }, [])
   useEffect(() => { saveChat(turns) }, [turns])
   useEffect(() => { saveDocs(docs) }, [docs])
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }) }, [turns.length, waiting])
@@ -99,6 +101,13 @@ export default function AssistTab({ taskData }) {
         <button className={styles.fresh} onClick={() => setMemory(true)}><BookMarked size={15} />Memory</button>
         {turns.length > 0 && <button className={styles.fresh} onClick={fresh}><SquarePen size={15} />New chat</button>}
       </div>
+      {connect && (
+        <section className={styles.connect} aria-label="Connect Claude">
+          <div className={styles.connectHead}><KeyRound size={16} />Connect Claude</div>
+          <p>Paste your Claude key and tap Save. Claude answers here from then on.</p>
+          <ClaudeKey onDone={() => { setConnect(false); setInApp(true) }} />
+        </section>
+      )}
       {turns.length > 0 && (
         <div className={styles.thread}>
           {turns.map((t, i) => t.role === 'user'
@@ -122,7 +131,7 @@ export default function AssistTab({ taskData }) {
             <a className={styles.small} href={claudeLink(asked, ctx)} target="_blank" rel="noreferrer">Claude<ArrowUpRight size={14} /></a>
             <a className={styles.small} href={googleLink(asked, ctx)} target="_blank" rel="noreferrer">Google<ArrowUpRight size={14} /></a>
           </div>
-          <p className={styles.note}>Connect Claude in Evolve, Check setup, to chat right here.</p>
+          <p className={styles.note}>{connect ? 'Paste your Claude key above to chat right here.' : 'Connect Claude in Evolve, Check setup, to chat right here.'}</p>
         </div>
       )}
 
