@@ -1,6 +1,6 @@
 // Evolve: tell Jarvis what it should do better. Claude builds it (every few hours), it shows up
 // here to try, and Approve puts it live. Nothing changes without your Approve. Claude's answers
-// to your requests show here too: Save keeps one in Memory, Delete takes it off this page.
+// to your requests show here too: Save keeps one in Knowledge, Delete takes it off this page.
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { formatDistanceToNowStrict } from 'date-fns'
@@ -85,7 +85,7 @@ export default function EvolveTab({ data, ready, onChanged, seen = '' }) {
   )
 }
 
-// Save puts the reply in Memory (so Search and Assist know it) and takes it off Evolve;
+// Save puts the reply in Knowledge (so Search and Assist know it) and takes it off Evolve;
 // Delete just takes it off Evolve. Either way it stays on GitHub.
 function Reply({ r, isNew, onGone, onBack }) {
   const act = async (save) => {
@@ -93,7 +93,7 @@ function Reply({ r, isNew, onGone, onBack }) {
     const res = save ? await addMemory(r.text, 'claude', r.request) : await hideReply(r.id)
     if (res.error) { onBack(); toast.error(res.why || 'Could not reach Jarvis. Try again.'); return }
     if (save) hideReply(r.id)   // if this one fails, the reply just shows again next time
-    toast.success(save ? 'Saved to Memory' : 'Deleted')
+    toast.success(save ? 'Saved to Knowledge' : 'Deleted')
   }
   return (
     <div className={styles.reply}>

@@ -67,25 +67,14 @@ export function refs(q) {
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const count = (text, re) => (text.match(re) || []).length
 
-// The best passages for a question: Okapi BM25 over every passage, plus a strong lift for a
-// passage where the section or rule asked about begins ("73. (1) Where…"), and for documents
-// opened in this chat (`docs`). A short document opened in this chat goes in whole.
-export async function searchLibrary(user, q, { docs = [], budget = 24000 } = {}) {
-  const index = (await readIndex(user)).filter(d => d.ready)
-  if (!index.length) return { list: [], text: '' }
-  const all = (await Promise.all(index.map(d => readDoc(user, d.id).catch(() => null)))).filter(Boolean)
-  const list = index.map(d => `${d.name} (${d.pages} page${d.pages === 1 ? '' : 's'})`)
+// Library search, used by both stores (Netlify Blobs here, Supabase in store.mjs).
+// A passage is { d: { id, name }, i: its number in the document, c: { p: page, t: text } }.
 
-  const picked = new Set(docs)
-  const whole = []
-  let room = budget
-  for (const d of all.filter(d => picked.has(d.id))) {
-    const size = d.chunks.reduce((n, c) => n + c.t.length, 0)
-    if (size <= Math.min(room, 40000)) { whole.push(d.id); room -= size }
-  }
-
+// The passages ranked for a question: Okapi BM25, plus a strong lift for a passage where the
+// section or rule asked about begins ("73. (1) Where…"), and for documents opened in this chat
+export function rankPassages(passages, q, picked = new Set()) {
   const words = terms(q), asked = refs(q)
-  const passages = all.filter(d => !whole.includes(d.id)).flatMap(d => d.chunks.map((c, i) => ({ d, i, c, low: c.t.toLowerCase() })))
+  for (const x of passages) x.low = x.c.t.toLowerCase()
   const df = new Map(words.map(w => [w, 0]))
   const pats = new Map(words.map(w => [w, new RegExp(`(^|[^a-z0-9])${esc(w)}`, 'g')]))
   for (const x of passages) for (const w of words) if (x.low.includes(w)) df.set(w, df.get(w) + 1)
@@ -109,26 +98,63 @@ export async function searchLibrary(user, q, { docs = [], budget = 24000 } = {})
     if (picked.has(x.d.id)) s *= 2
     x.s = s
   }
+  return passages.filter(x => x.s > 0).sort((a, b) => b.s - a.s)
+}
 
-  // Best first; a section that runs past its passage brings the next one along
+// Best first, up to room characters; a section that runs past one of the best three passages
+// brings the next one along (next(x) gives it, if there is one)
+export function pickPassages(ranked, room, next) {
   const chosen = new Map()
   const take = (x) => {
     const key = `${x.d.id}:${x.i}`
     if (chosen.has(key) || x.c.t.length > room) return
     chosen.set(key, x); room -= x.c.t.length
   }
-  const ranked = passages.filter(x => x.s > 0).sort((a, b) => b.s - a.s)
   for (const [k, x] of ranked.slice(0, 40).entries()) {
     if (room < 500) break
     take(x)
-    const next = x.d.chunks[x.i + 1]
-    if (k < 3 && next) take({ d: x.d, i: x.i + 1, c: next })
+    const n = k < 3 && next(x)
+    if (n) take(n)
+  }
+  return [...chosen.values()]
+}
+
+export const passageText = (x) => `[${x.d.name}, page ${x.c.p}]\n${x.c.t}`
+export const docLine = (d) => `${d.name} (${d.pages} page${d.pages === 1 ? '' : 's'})`
+
+// For Supabase's search: the question's words as "word | word" and the section starts as a pattern
+export function tsQuery(q) {
+  const pieces = terms(q).flatMap(w => w.split(/[^a-z0-9]+/)).filter(Boolean)
+  return [...new Set(pieces)].slice(0, 20).join(' | ')
+}
+export function headsPattern(q) {
+  const ns = [...new Set(refs(q).map(r => r.n).filter(n => /^[0-9A-Z]{1,5}$/.test(n)))]
+  return ns.length ? `(^|\\n)\\s*\\[?(${ns.join('|')})\\.\\s` : ''
+}
+
+// The best passages for a question from the Library on Netlify. A short document opened in this
+// chat (docs) goes in whole.
+export async function searchLibrary(user, q, { docs = [], budget = 24000 } = {}) {
+  const index = (await readIndex(user)).filter(d => d.ready)
+  if (!index.length) return { list: [], text: '' }
+  const all = (await Promise.all(index.map(d => readDoc(user, d.id).catch(() => null)))).filter(Boolean)
+  const list = index.map(docLine)
+
+  const picked = new Set(docs)
+  const whole = []
+  let room = budget
+  for (const d of all.filter(d => picked.has(d.id))) {
+    const size = d.chunks.reduce((n, c) => n + c.t.length, 0)
+    if (size <= Math.min(room, 40000)) { whole.push(d.id); room -= size }
   }
 
+  const passages = all.filter(d => !whole.includes(d.id)).flatMap(d => d.chunks.map((c, i) => ({ d, i, c })))
+  const next = (x) => { const c = x.d.chunks[x.i + 1]; return c && { d: x.d, i: x.i + 1, c } }
+  const chosen = pickPassages(rankPassages(passages, q, picked), room, next)
   const parts = [
     ...all.filter(d => whole.includes(d.id)).map(d => `[${d.name}, all of it]\n` + d.chunks.map(c => c.t).join('\n')),
     // best first, each continuation right after the passage it continues
-    ...[...chosen.values()].map(x => `[${x.d.name}, page ${x.c.p}]\n${x.c.t}`),
+    ...chosen.map(passageText),
   ]
   return { list, text: parts.join('\n\n') }
 }
@@ -140,9 +166,4 @@ export function libraryPrompt({ list, text }) {
     (text
       ? 'Passages from it that match this question follow, best first. Base your answer on them when they cover the question, quote the key words, and name the document and page. If they do not cover it, say so and answer from your own knowledge.\n\n' + text
       : 'No passage in it matches this question; answer from your own knowledge and say so.')
-}
-
-// The Library is extra: if it can't be read, Search and Assist still answer
-export async function libraryFor(user, q, opts) {
-  try { return libraryPrompt(await searchLibrary(user.id, q, opts)) } catch { return '' }
 }

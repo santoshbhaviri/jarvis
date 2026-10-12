@@ -4,6 +4,8 @@
 import { env, json, signedIn, looksLike, geminiKey, askGemini, geminiProblem, GEMINI_BUSY, GEMINI_LIMIT, GITHUB_BAD, GITHUB_NO_ACCESS } from '../lib/common.mjs'
 import { readMemory, STORAGE_DOWN } from '../lib/memory.mjs'
 import { claudeKey, testClaude, spent, RUPEES } from '../lib/ai.mjs'
+import { setUp } from '../lib/supa.mjs'
+import { openStore, moved } from '../lib/store.mjs'
 
 const REPO = env('JARVIS_REPO') || 'santoshbhaviri/jarvis'
 const REACH = (who) => `Couldn't reach ${who} just now. Try again in a minute.`
@@ -72,10 +74,23 @@ async function github() {
   } catch { return { name, ok: false, fix: REACH('GitHub') } }
 }
 
-// Memory needs no key: Netlify's own storage
-async function memory(user) {
-  try { await readMemory(user.id); return { name: 'Memory', ok: true } }
-  catch { return { name: 'Memory', ok: false, fix: STORAGE_DOWN } }
+// Knowledge needs no key: Netlify's own storage, or your Supabase once it has moved there
+async function knowledge(req, user) {
+  if (await moved(user).catch(() => false)) {
+    const name = 'Knowledge (in your Supabase)'
+    try {
+      const k = await openStore(req, user)
+      const [notes, chats] = await Promise.all([k.notes.list().then(n => n.length), k.chats.count()])
+      return { name, ok: true, note: `${notes} note${notes === 1 ? '' : 's'} and ${chats} chat${chats === 1 ? '' : 's'} kept.` }
+    } catch {
+      return { name, ok: false, fix: "Couldn't reach your Supabase. If Jarvis wasn't opened for a week, Supabase pauses it: open supabase.com and tap Restore." }
+    }
+  }
+  try {
+    await readMemory(user.id)
+    const note = (await setUp(req)) === false ? 'Kept on Netlify for now. To keep it in your own Supabase, open Assist, then Knowledge.' : undefined
+    return { name: 'Knowledge', ok: true, ...(note && { note }) }
+  } catch { return { name: 'Knowledge', ok: false, fix: STORAGE_DOWN } }
 }
 
 export default async (req) => {
@@ -85,6 +100,6 @@ export default async (req) => {
   // Someone else signed in: only say the email doesn't match, test nothing
   if (!you.ok && env('JARVIS_OWNER_EMAIL')) return json({ checks: [you] })
   const withClaude = !!(await claudeKey()).key
-  const rows = await Promise.all([claude(), withClaude && !env('GEMINI_API_KEY') ? null : gemini(withClaude), github(), memory(user)])
+  const rows = await Promise.all([claude(), withClaude && !env('GEMINI_API_KEY') ? null : gemini(withClaude), github(), knowledge(req, user)])
   return json({ checks: [you, ...rows.filter(Boolean)] })
 }

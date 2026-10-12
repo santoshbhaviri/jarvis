@@ -37,9 +37,10 @@ export const dropUpdate   = (number) => call('jarvis-github', { method: 'POST', 
 export const searchWeb    = (q) => call('jarvis-search', { query: `?q=${encodeURIComponent(q)}` })
 export const searchAnswer = (q, found, turns) => call('jarvis-search', { method: 'POST', body: { q, news: found.news, wiki: found.wiki, turns } })
 
-// Memory: notes, preferences, saved answers and documents that Search and Assist use
+// Knowledge: notes, preferences, saved answers and what Jarvis learned, used by Search and Assist
 export const listMemory   = () => call('jarvis-memory')
 export const addMemory    = (text, from = 'you', title) => call('jarvis-memory', { method: 'POST', body: { text, from, title } })
+export const editMemory   = (id, text) => call('jarvis-memory', { method: 'POST', body: { action: 'edit', id, text } })
 export const deleteMemory = (id) => call('jarvis-memory', { method: 'POST', body: { action: 'delete', id } })
 // Takes one of Claude's replies off Evolve (it stays on GitHub)
 export const hideReply    = (id) => call('jarvis-memory', { method: 'POST', body: { action: 'hide', id } })
@@ -51,3 +52,8 @@ export const appendDoc    = (id, pages) => call('jarvis-library', { method: 'POS
 export const finishDoc    = (id) => call('jarvis-library', { method: 'POST', body: { action: 'finish', id } })
 export const deleteDoc    = (id) => call('jarvis-library', { method: 'POST', body: { action: 'delete', id } })
 export const readPage     = (type, data) => call('jarvis-library', { method: 'POST', body: { action: 'ocr', type, data } })
+
+// Where your Knowledge is kept (Netlify, or your own Supabase once the setup code has run there)
+export const knowledgeStatus = (quick) => call('jarvis-knowledge', { query: quick ? '?quick' : '' })
+export const moveKnowledge   = () => call('jarvis-knowledge', { method: 'POST', body: { action: 'move' } })
+export const forgetChats     = () => call('jarvis-knowledge', { method: 'POST', body: { action: 'forget_chats' } })

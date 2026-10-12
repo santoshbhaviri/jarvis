@@ -1,12 +1,11 @@
 // The Search tab. Free, no key needed:
 //   GET ?q=…                 → latest Google News headlines and a Wikipedia summary
 //   POST {q, news, wiki}     → a short answer written from those by Claude (or the free Gemini key
-//                              until Claude is connected), with your Memory and Library in mind
+//                              until Claude is connected), with your Knowledge in mind
 // Jarvis fetches the news first and hands it over with the question.
 import { json, owner, geminiKey } from '../lib/common.mjs'
 import { askAI, aiReady } from '../lib/ai.mjs'
-import { memoryFor } from '../lib/memory.mjs'
-import { libraryFor } from '../lib/library.mjs'
+import { knowledgeFor } from '../lib/store.mjs'
 
 const UA = 'Jarvis personal assistant (https://github.com/santoshbhaviri/jarvis)'
 const STOP = new Set('what who whom whose why how when where which is are was were the a an of in on for to and or about latest news today update updates tell me give show find search please jarvis does did can could should would'.split(' '))
@@ -78,9 +77,9 @@ export default async (req) => {
   ].filter(Boolean).join('\n\n')
 
   const last = turns.length ? turns.at(-1).text : q
-  const [memory, library] = await Promise.all([memoryFor(user), libraryFor(user, `${q}\n${last}`, { budget: 12000 })])
+  const know = await knowledgeFor(req, user, `${q}\n${last}`, { budget: 12000 })
   const out = await askAI({
-    system: [SYSTEM, memory].filter(Boolean).join('\n\n'), extra: library,
+    system: [SYSTEM, know.text].filter(Boolean).join('\n\n'), extra: know.extra,
     turns: [
       { role: 'user', text: `${sources}\n\nQuestion: ${q.slice(0, 500)}` },
       // The first question carries the sources; later turns follow it (the last 12 at most)
