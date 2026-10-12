@@ -57,3 +57,10 @@ export const readPage     = (type, data) => call('jarvis-library', { method: 'PO
 export const knowledgeStatus = (quick) => call('jarvis-knowledge', { query: quick ? '?quick' : '' })
 export const moveKnowledge   = () => call('jarvis-knowledge', { method: 'POST', body: { action: 'move' } })
 export const forgetChats     = () => call('jarvis-knowledge', { method: 'POST', body: { action: 'forget_chats' } })
+
+// Your day (Today): your calendar and the mail that needs you. The calendar link and the Gmail app
+// password are checked and kept on Jarvis's server, never on the phone.
+export const getDay       = (fresh) => call('jarvis-day', { query: fresh ? '?fresh' : '' })
+export const linkCalendar = (link) => call('jarvis-day', { method: 'POST', body: { action: 'calendar', link } })
+export const linkMail     = (address, password) => call('jarvis-day', { method: 'POST', body: { action: 'mail', address, password } })
+export const unlinkDay    = (what) => call('jarvis-day', { method: 'POST', body: { action: 'remove', what } })

@@ -33,7 +33,7 @@ export default async (req) => {
     if (!fresh && kept && kept.day === istDate() && Date.now() - Date.parse(kept.at) < KEEP && kept.calendar === linked.calendar && kept.mail === linked.mail) {
       return json(kept)
     }
-    const out = { ...linked, ...(await read(cal, mail, began)), day: istDate(), at: new Date().toISOString() }
+    const out = { ...linked, ...(await read(cal, mail, began, kept)), day: istDate(), at: new Date().toISOString() }
     await store.setJSON('day/latest', out).catch(() => {})
     return json(out)
   } catch {
@@ -69,8 +69,9 @@ async function change(store, body) {
   return json({ error: 'bad_request' }, 400)
 }
 
-// Calendar and mail side by side; whatever isn't back in time is left for next time
-async function read(cal, mail, began) {
+// Calendar and mail side by side; whatever isn't back in time is left for next time.
+// Claude sorts the mail again only when something new has come in since the last time.
+async function read(cal, mail, began, kept) {
   const problems = {}
   const [c, m] = await Promise.all([
     cal?.link ? readCalendar(cal.link, Date.now(), 9000) : { events: [] },
@@ -78,8 +79,11 @@ async function read(cal, mail, began) {
   ])
   if (c.error) problems.calendar = c.why
   if (m.error) problems.mail = m.why
-  const mails = m.mails?.length ? await sortMail(m.mails, began + 26000) : []
-  return { events: c.events || [], mails, problems }
+  const found = m.mails || []
+  const ids = found.map(x => x.id).join('|')
+  if (ids && kept?.sortedFor === ids && Array.isArray(kept.mails)) return { events: c.events || [], mails: kept.mails, sortedFor: ids, problems }
+  const sorted = found.length ? await sortMail(found, began + 26000) : null
+  return { events: c.events || [], mails: sorted?.mails || [], ...(sorted?.byClaude && { sortedFor: ids }), problems }
 }
 
 // Which mails need you, and what each one wants, in a line. Claude reads them (never the free
@@ -105,7 +109,7 @@ const SORT = {
   additionalProperties: false,
 }
 async function sortMail(mails, until) {
-  const plain = (list) => list.slice(0, 6).map(({ text, ...m }) => ({ ...m, line: m.subject, reply: false }))
+  const plain = (list) => ({ mails: list.slice(0, 6).map(({ text, ...m }) => ({ ...m, line: m.subject, reply: false })) })
   if (!(await claudeKey()).key || until - Date.now() < 4000) return plain(mails)
   const list = mails.map((m, i) => `#${i}\nFrom: ${m.name} <${m.from}>\nDate: ${m.at}\nSubject: ${m.subject}\n${m.text}`).join('\n\n')
   const out = await askAI({
@@ -115,8 +119,11 @@ async function sortMail(mails, until) {
   })
   if (out.error || !Array.isArray(out.json?.mails)) return plain(mails)
   const seen = new Set()
-  return out.json.mails
-    .filter(p => mails[p.n] && !seen.has(p.n) && seen.add(p.n))
-    .slice(0, 8)
-    .map(p => { const { text, ...m } = mails[p.n]; return { ...m, line: String(p.line || m.subject).slice(0, 140), reply: !!p.reply } })
+  return {
+    byClaude: true,
+    mails: out.json.mails
+      .filter(p => mails[p.n] && !seen.has(p.n) && seen.add(p.n))
+      .slice(0, 8)
+      .map(p => { const { text, ...m } = mails[p.n]; return { ...m, line: String(p.line || m.subject).slice(0, 140), reply: !!p.reply } }),
+  }
 }

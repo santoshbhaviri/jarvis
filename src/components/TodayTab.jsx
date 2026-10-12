@@ -1,5 +1,6 @@
 // src/components/TodayTab.jsx
-// The day's plan: a box to add tasks (type, or the keyboard's mic), the one thing to do next, what else is left today (unfinished tasks
+// The day's plan: a box to add tasks (type, or the keyboard's mic), the one thing to do next, Your day
+// (meetings, birthdays and the mail that needs you), what else is left today (unfinished tasks
 // carry over by themselves), what got done, and anything planned for later days.
 // After 8 pm an evening wrap-up asks what to do with what's left.
 import { useState } from 'react'
@@ -12,6 +13,7 @@ import { doneDay } from '../hooks/useTasks'
 import SectionHeader from './SectionHeader'
 import TaskRow       from './TaskRow'
 import AddTasks      from './AddTasks'
+import YourDay       from './YourDay'
 import styles        from './TodayTab.module.css'
 
 export default function TodayTab({ taskData, onEdit }) {
@@ -68,6 +70,8 @@ export default function TodayTab({ taskData, onEdit }) {
           </div>
         )}
       </div>
+
+      <YourDay addTask={addTask} />
 
       {evening && (
         <Wrapup todo={todo} onDone={finishWrap}
