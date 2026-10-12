@@ -44,3 +44,4 @@
 .file { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
 .file svg { flex-shrink: 0; }
 .progress { font-size: 13px; color: var(--star-text); font-weight: 600; margin: 0 4px 8px; }
+.undone { text-decoration: line-through; color: var(--text3); }

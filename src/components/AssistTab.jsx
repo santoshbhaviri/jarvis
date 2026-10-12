@@ -1,29 +1,30 @@
 // Assist: chat with Jarvis like ChatGPT or Gemini. It knows today's tasks, writes and polishes
 // messages (send by WhatsApp, SMS or email), turns what you say into tasks, and can dial a number.
-// It knows GST law and drafts notices, orders and replies, and reads your Memory before answering;
-// "remember …" saves a note there straight away. The paperclip adds a document (PDF, photo or text)
+// It knows GST law and drafts notices, orders and replies, and reads your Knowledge before answering;
+// "remember …" saves a note there straight away, and lasting preferences it hears are learned by
+// itself (Undo under the answer takes one back). The paperclip adds a document (PDF, photo or text)
 // to your Library in full; the next questions in this chat look in it first.
 // Claude answers once it is connected (paste the key in the box at the top, or Evolve, Check setup),
 // or the free Gemini key until then; with neither, your question opens in ChatGPT or Claude.
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
-import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen, BookMarked, FileText, KeyRound } from 'lucide-react'
-import { askJarvis, isReady, assistStatus, addMemory } from '../lib/server'
+import { Volume2, Copy, Phone, ArrowUpRight, Check, Plus, SquarePen, Brain, FileText, KeyRound, Undo2 } from 'lucide-react'
+import { askJarvis, isReady, assistStatus, addMemory, deleteMemory } from '../lib/server'
 import { dayContext, chatgptLink, claudeLink, googleLink } from '../lib/assistant'
 import { todayStr } from '../lib/dateUtils'
 import { ACCEPT } from '../lib/library'
 import { useAddDocument } from '../hooks/useAddDocument'
 import { ClaudeKey } from './SetupCheck'
 import CommandBox from './CommandBox'
-import MemoryPanel from './MemoryPanel'
+import KnowledgePanel from './KnowledgePanel'
 import SaveButton from './SaveButton'
 import styles from './AssistTab.module.css'
 
 const CHAT = 'jarvis-chat'
 const DOCS = 'jarvis-chat-docs'       // Library documents added in this chat
 const IDEAS = ['Plan my day', "What's pending this week?", 'Explain section 74 of CGST Act', 'What can you do?']
-// "Remember that …" saves to Memory; "remember to …" is a task, and a question is a question
+// "Remember that …" saves to Knowledge; "remember to …" is a task, and a question is a question
 const REMEMBER = /^(?:please\s+|jarvis[,\s]+)*remember(?:\s+that)?\b[\s:,-]*/i
 const ERRORS = {
   busy: 'Too many questions in a short time. Try again in a minute.',
@@ -44,7 +45,7 @@ export default function AssistTab({ taskData }) {
   const [text, setText]       = useState('')
   const [waiting, setWaiting] = useState(false)
   const [asked, setAsked]     = useState(null)       // without the key: the question to open elsewhere
-  const [memory, setMemory]   = useState(false)      // showing Memory instead of the chat
+  const [memory, setMemory]   = useState(false)      // showing Knowledge instead of the chat
   const [docs, setDocs]       = useState(loadDocs)
   const { adding, add: addDoc } = useAddDocument()
   const endRef = useRef(null)
@@ -65,7 +66,7 @@ export default function AssistTab({ taskData }) {
       setWaiting(false)
       setTurns(prev => [...prev, res.error
         ? { role: 'assistant', text: res.why || 'Could not save that. Try again.', error: true }
-        : { role: 'assistant', text: "Saved to Memory. I'll keep it in mind.", saved: true }])
+        : { role: 'assistant', text: "Saved to your Knowledge. I'll keep it in mind.", saved: true }])
       return
     }
     const ok = inApp ?? await isReady('jarvis-ask')
@@ -93,12 +94,12 @@ export default function AssistTab({ taskData }) {
   }
   const fresh = () => { setTurns([]); setDocs([]) }
 
-  if (memory) return <div className={styles.tab}><MemoryPanel onBack={() => setMemory(false)} /></div>
+  if (memory) return <div className={styles.tab}><KnowledgePanel onBack={() => setMemory(false)} /></div>
 
   return (
     <div className={styles.tab}>
       <div className={styles.bar}>
-        <button className={styles.fresh} onClick={() => setMemory(true)}><BookMarked size={15} />Memory</button>
+        <button className={styles.fresh} onClick={() => setMemory(true)}><Brain size={15} />Knowledge</button>
         {turns.length > 0 && <button className={styles.fresh} onClick={fresh}><SquarePen size={15} />New chat</button>}
       </div>
       {connect && (
@@ -174,6 +175,7 @@ function Answer({ turn, q = '', addTask }) {
             text={a?.message?.text ? `${turn.text}\n\n${a.message.text}` : turn.text} />
         </div>
       )}
+      {a?.learned && <LearnedCard item={a.learned} />}
       {a?.remember && <RememberCard note={a.remember} />}
       {a?.tasks?.length > 0 && (
         <div className={styles.card}>
@@ -191,7 +193,26 @@ function Answer({ turn, q = '', addTask }) {
   )
 }
 
-// Jarvis heard a lasting preference or fact: one tap keeps it in Memory
+// Jarvis learned a lasting preference or fact and kept it in your Knowledge: Undo takes it back
+function LearnedCard({ item }) {
+  const [state, setState] = useState('')
+  const undo = async () => {
+    setState('undoing')
+    const res = await deleteMemory(item.id)
+    if (res.error) { setState(''); toast.error(res.why || 'Could not undo. Try again.'); return }
+    setState('undone')
+  }
+  return (
+    <div className={styles.card}>
+      <div className={styles.taskRow}>
+        <span className={state === 'undone' ? styles.undone : ''}><small>Learned: </small>{item.text}</span>
+        <button className={styles.small} disabled={!!state} onClick={undo}>{state === 'undone' ? 'Forgotten' : <><Undo2 size={14} />Undo</>}</button>
+      </div>
+    </div>
+  )
+}
+
+// Jarvis heard a lasting preference or fact but couldn't keep it: one tap saves it to Knowledge
 function RememberCard({ note }) {
   const [state, setState] = useState('')
   const save = async () => {

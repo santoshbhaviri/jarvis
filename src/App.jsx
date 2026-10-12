@@ -12,7 +12,8 @@ import DoneTab       from './components/DoneTab'
 import SearchTab     from './components/SearchTab'
 import AssistTab     from './components/AssistTab'
 import EvolveTab     from './components/EvolveTab'
-import { isReady, listUpdates } from './lib/server'
+import { isReady, listUpdates, knowledgeStatus } from './lib/server'
+import { moveAll } from './lib/knowledge'
 import { HOME, isTestCopy } from './lib/constants'
 import EditTaskModal from './components/EditTaskModal'
 import InstallBanner from './components/InstallBanner'
@@ -68,6 +69,9 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
     return () => document.removeEventListener('visibilitychange', back)
   }, [loadUpdates])
   const waiting = updates?.updates?.length || 0
+
+  // Once the setup code has run in your Supabase, your Knowledge moves there by itself
+  useEffect(() => { knowledgeStatus(true).then(s => { if (s.move) moveAll() }) }, [])
 
   // Replies you haven't seen count on the Evolve tab until you open it. `shown` keeps the
   // earlier mark while you're on the tab, so the new ones stay marked New there.

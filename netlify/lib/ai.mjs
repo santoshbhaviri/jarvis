@@ -79,7 +79,7 @@ async function addSpend(model, u) {
 
 // One question to the AI.
 //   system  instructions and Memory: the same from one question to the next, so Claude caches it
-//   extra   what changes with each question (Library passages)
+//   extra   what changes with each question (Library passages, older notes, earlier chats)
 //   turns   [{ role: 'user' | 'assistant', text, image?: { type, data } }], ending with theirs
 //   schema  JSON schema when the answer should come as fields (null for plain text)
 //   model   'smart' or 'quick'; effort 'low' | 'medium' | 'high' (smart only)

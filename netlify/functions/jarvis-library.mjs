@@ -1,4 +1,4 @@
-// Library: documents kept in full (see netlify/lib/library.mjs). Only your login can use it.
+// Library: documents kept in full (see netlify/lib/library.mjs and store.mjs). Only your login can use it.
 //   GET                                          → { docs } newest first
 //   POST { action: 'start', name }               → a new document → { id }
 //   POST { action: 'append', id, pages }         → adds pages of text [{ p, t }] (in batches)
@@ -7,10 +7,9 @@
 //   POST { action: 'ocr', type, data }           → Claude (Haiku, or Gemini until Claude is connected)
 //                                                  reads the text off one photo or scanned page
 //                                                  (base64) → { text }; nothing is kept
-import { randomUUID } from 'node:crypto'
 import { json, owner, geminiKey } from '../lib/common.mjs'
 import { askAI, aiReady } from '../lib/ai.mjs'
-import { readIndex, writeIndex, readDoc, writeDoc, removeDoc, chunkPage, MAX_DOCS, MAX_CHARS, MAX_TOTAL } from '../lib/library.mjs'
+import { openStore, Refused } from '../lib/store.mjs'
 import { STORAGE_DOWN } from '../lib/memory.mjs'
 
 const IMAGES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
@@ -40,55 +39,21 @@ export default async (req) => {
   if (!user) return json({ error: 'not_signed_in' }, 401)
 
   try {
-    if (req.method === 'GET') {
-      const docs = (await readIndex(user.id)).sort((a, b) => b.at.localeCompare(a.at))
-      return json({ docs })
-    }
-
-    const body = await req.json().catch(() => ({}))
-    if (body.action === 'ocr') return await ocr(body)
-
-    const index = await readIndex(user.id)
-    if (body.action === 'start') {
-      const name = String(body.name || '').trim().slice(0, 120) || 'Document'
-      if (index.length >= MAX_DOCS) return json({ error: 'full', why: `Your Library is full (${MAX_DOCS} documents). Delete some first.` }, 409)
-      const id = randomUUID()
-      await writeDoc(user.id, { id, name, chunks: [] })
-      await writeIndex(user.id, [...index, { id, name, pages: 0, chars: 0, at: new Date().toISOString(), ready: false }])
-      return json({ id })
-    }
-
-    const entry = index.find(d => d.id === body.id)
-    if (!entry) return json({ error: 'not_found', why: "That document isn't in your Library any more." }, 404)
-
+    const body = req.method === 'GET' ? null : await req.json().catch(() => ({}))
+    if (body?.action === 'ocr') return await ocr(body)
+    const k = await openStore(req, user)
+    if (!body) return json({ docs: await k.docs.list() })
+    if (body.action === 'start') return json({ id: await k.docs.start(String(body.name || '').trim().slice(0, 120) || 'Document') })
+    if (typeof body.id !== 'string' || !body.id) return json({ error: 'not_found', why: "That document isn't in your Library any more." }, 404)
     if (body.action === 'append') {
-      const pages = Array.isArray(body.pages) ? body.pages : []
-      const doc = await readDoc(user.id, entry.id) || { id: entry.id, name: entry.name, chunks: [] }
-      const adding = pages.flatMap(pg => chunkPage(Number(pg.p) || 0, pg.t))
-      const chars = adding.reduce((n, c) => n + c.t.length, 0)
-      const total = index.reduce((n, d) => n + (d.chars || 0), 0)
-      if (entry.chars + chars > MAX_CHARS) return json({ error: 'too_big', why: 'This document is too long for Jarvis (over about 2,000 pages of text).' }, 413)
-      if (total + chars > MAX_TOTAL) return json({ error: 'full', why: 'Your Library is full. Delete some documents first.' }, 409)
-      doc.chunks.push(...adding)
-      await writeDoc(user.id, doc)
-      entry.chars += chars
-      entry.pages = Math.max(entry.pages, ...pages.map(pg => Number(pg.p) || 0))
-      await writeIndex(user.id, index)
+      await k.docs.append(body.id, Array.isArray(body.pages) ? body.pages : [])
       return json({ ok: true })
     }
-    if (body.action === 'finish') {
-      if (!entry.chars) return json({ error: 'empty', why: 'Jarvis found no text in this document.' }, 400)
-      entry.ready = true
-      await writeIndex(user.id, index)
-      return json({ doc: entry })
-    }
-    if (body.action === 'delete') {
-      await removeDoc(user.id, entry.id)
-      await writeIndex(user.id, index.filter(d => d.id !== entry.id))
-      return json({ ok: true })
-    }
+    if (body.action === 'finish') return json({ doc: await k.docs.finish(body.id) })
+    if (body.action === 'delete') { await k.docs.remove(body.id); return json({ ok: true }) }
     return json({ error: 'bad_request' }, 400)
-  } catch {
+  } catch (e) {
+    if (e instanceof Refused) return json({ error: e.error, why: e.why }, e.status)
     return json({ error: 'storage', why: STORAGE_DOWN }, 503)
   }
 }
