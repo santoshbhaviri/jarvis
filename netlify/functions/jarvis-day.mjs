@@ -3,6 +3,7 @@
 // and the calendar link and Gmail app password stay in Netlify's own storage, never sent back.
 //   GET              → { calendar, mail, events, mails, at, problems } (kept for 15 minutes)
 //   GET ?fresh       → the same, read again now
+//   GET ?ping        → { ready: true } (no login needed; shows the function and its libraries load)
 //   POST { action: 'calendar', link }            tries the link, then keeps it
 //   POST { action: 'mail', address, password }   tries signing in to Gmail, then keeps it
 //   POST { action: 'remove', what }              'calendar' or 'mail'
@@ -19,6 +20,7 @@ const istDate = (at = Date.now()) => new Date(at + 5.5 * 3600e3).toISOString().s
 
 export default async (req) => {
   const began = Date.now()
+  if (new URL(req.url).searchParams.has('ping')) return json({ ready: true })
   if (!env('JARVIS_OWNER_EMAIL')) return json({ error: 'no_owner', why: 'Add JARVIS_OWNER_EMAIL in Netlify first (your login email), so only you can see your mail and calendar.' }, 403)
   const user = await owner(req)
   if (!user) return json({ error: 'not_signed_in' }, 401)
