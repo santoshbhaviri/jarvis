@@ -84,18 +84,19 @@ async function addSpend(model, u) {
 //   schema  JSON schema when the answer should come as fields (null for plain text)
 //   model   'smart' or 'quick'; effort 'low' | 'medium' | 'high' (smart only)
 //   until   when the answer must be back (Netlify stops a function after 30 seconds)
+//   claudeOnly  never send this to Gemini (its free tier may keep what it reads), e.g. your mail
 // → { text } or { json }, with cut: true when time ran out partway; or { error, why, status }
-export async function askAI({ system, extra = '', turns, schema = null, model = 'smart', effort = 'medium', maxTokens = 8192, until = Date.now() + 24000 }) {
+export async function askAI({ system, extra = '', turns, schema = null, model = 'smart', effort = 'medium', maxTokens = 8192, until = Date.now() + 24000, claudeOnly = false }) {
   const asked = turns.slice(turns.findIndex(t => t.role === 'user'))
   const ask = { system, extra, turns: asked, schema, model, effort, maxTokens, until }
   const { key } = await claudeKey()
-  if (!key) return gemini(ask)
+  if (!key) return claudeOnly ? { error: 'not_configured', status: 503 } : gemini(ask)
   const image = asked.find(t => t.image)?.image
   if (image && !CLAUDE_IMAGES.includes(image.type)) {
     return geminiKey().key ? gemini(ask) : { error: 'bad_file', status: 400, why: 'Claude reads photos saved as JPEG or PNG. Take a screenshot of this one and add that instead.' }
   }
   const out = await claude(key, ask)
-  if (!out.error) return out
+  if (!out.error || claudeOnly) return out
   // Out of credit, key refused or busy with time to spare: Gemini answers this one if it can
   if (!INSTEAD[out.error] || !geminiKey().key || until - Date.now() < 8000) return out
   const g = await gemini(ask)

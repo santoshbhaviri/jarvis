@@ -3,6 +3,17 @@
 import { format } from 'date-fns'
 import { todayStr } from './dateUtils'
 
+// Your calendar for today and tomorrow, as Today's Your day card last showed it (mail stays out:
+// a question can end up with the free Gemini when Claude is busy)
+function calendar() {
+  let day
+  try { day = JSON.parse(localStorage.getItem('jarvis-day')) } catch { return '' }
+  if (!day?.events?.length || day.day !== todayStr()) return ''
+  const one = e => `${e.allDay ? (e.birthday ? 'birthday' : 'all day') : format(new Date(e.start), 'h:mm a')} ${e.title}${e.where ? ` (${e.where})` : ''}`
+  const on = d => day.events.filter(e => e.day === d).map(one).join('; ')
+  return `[Calendar today: ${on('today') || 'nothing'}. Tomorrow: ${on('tomorrow') || 'nothing'}.]`
+}
+
 // What Jarvis knows about your day, sent along with a question
 export function dayContext(tasks, isRoutineDone) {
   const today = todayStr()
@@ -17,6 +28,7 @@ export function dayContext(tasks, isRoutineDone) {
     done.length ? `[Done today: ${done.map(t => t.title).join('; ')}]` : '',
     later.length ? `[Planned later: ${later.slice(0, 15).map(t => `${t.title} on ${t.due_date}`).join('; ')}]` : '',
     habits.length ? `[Habits: ${habits.map(h => `${h.title} ${isRoutineDone(h.id, today) ? 'done' : 'not done'} today`).join('; ')}]` : '',
+    calendar(),
   ].filter(Boolean).join('\n')
 }
 

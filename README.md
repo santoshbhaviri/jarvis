@@ -10,6 +10,7 @@ Six tabs. Each has a box to type in. To speak, tap the mic on the phone's keyboa
 - **Follow-ups**: "Waiting for Collector's reply" comes back in 3 days (⏳) unless you give a day.
 - **☀️ Today**: the card at the top shows the one thing to do **next** (Done / Later); the rest of today is below. Tap ☆ to highlight the important ones, which stay at the top. Tick a task when it is done.
   - Anything not ticked off by midnight **moves to the next day automatically**, marked "↪ N days" so you can see what keeps slipping.
+  - **Your day** (under the day card): today's birthdays and meetings from your calendar, a look at tomorrow, and the mail from people that needs you, one line each (sorted by Claude Haiku; the free Gemini never sees your mail). **+** puts a birthday wish or a reply on today's list, **×** hides a mail, tapping a mail opens it in Gmail. Assist knows today's calendar too. Set up once: see [Your day: calendar and Gmail](#your-day-calendar-and-gmail).
   - The day card shows how many of today's tasks you finished.
   - After 8 pm an **evening wrap-up** lists what's left: done, tomorrow or drop, or all to tomorrow in one tap.
 - **Works offline**: Jarvis opens with no signal; tasks you add or tick wait on the phone and sync when you're back online.
@@ -120,6 +121,13 @@ One time, from the phone: **Assist → Knowledge**, then
 3. Come back to Jarvis and tap **Done**.
 
 Jarvis then moves your notes and Library across (a big Library takes a minute or two; it carries on next time you open Jarvis if you close it) and keeps everything there from then on: tables `jarvis_notes`, `jarvis_documents`, `jarvis_passages` and `jarvis_chats`, each row visible only to your login (row-level security). Nothing on Netlify is deleted, so the old copy stays as a backup. The setup code is [`supabase-knowledge.sql`](supabase-knowledge.sql); running it again is harmless.
+
+### Your day: calendar and Gmail
+One time, best on the laptop, in the **Your day** card on Today:
+1. **Calendar**: in Google Calendar open Settings, click your calendar and copy **Secret address in iCal format**; paste it and tap **Save**. (An iPhone calendar's Public Calendar link works too. Birthdays kept elsewhere can be imported into Google Calendar first: Settings → Import & export.)
+2. **Gmail**: at myaccount.google.com/apppasswords make an app password named Jarvis (Google asks for 2-Step Verification first if it's off); type your Gmail address, paste the 16 letters and tap **Save**.
+
+Jarvis checks each before keeping it in Netlify's own storage (only your login, JARVIS_OWNER_EMAIL, can use them) and never sends them back to the phone. It only reads: the inbox is opened read-only, only the Primary tab of the last 3 days is looked at, and newsletters and automatic mail are dropped before Claude sorts the rest, which it does again only when new mail has come in (a few paise each time). The card is kept for 15 minutes; the ↻ button reads again now. Changing your Google password cancels the app password, so make a new one then. WhatsApp, iPhone Messages and office (NIC) mail can't be read by any app.
 
 ### Gemini (free stand-in)
 Jarvis asks the fast `gemini-flash-lite-latest` first and moves to `gemini-flash-latest` when Google says the first is overloaded or at its free limit. Optional: `GEMINI_MODEL` names a model to try before both. Gemini's free tier can't search Google itself, so the Search tab fetches Google News and Wikipedia first and hands them over with the question.

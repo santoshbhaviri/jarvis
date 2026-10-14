@@ -1,0 +1,75 @@
+/* Your day: a plain card under the day card, gold only for birthdays */
+.card {
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+  border-radius: var(--radius-xl); padding: 14px 16px 12px; margin-bottom: 22px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.title { font-family: var(--font-serif); font-size: 24px; font-weight: 400; line-height: 1.1; flex: 1; min-width: 0; }
+.when { font-size: 11.5px; color: var(--text3); font-variant-numeric: tabular-nums; }
+.icon {
+  flex-shrink: 0; display: inline-grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 99px; background: none; color: var(--text3);
+}
+.icon:disabled { opacity: 0.6; }
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+.row { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 4px 0; font-size: 14.5px; }
+.row + .row { border-top: 1px solid var(--border); }
+.at { flex-shrink: 0; width: 62px; font-size: 12.5px; color: var(--text2); font-variant-numeric: tabular-nums; }
+.what { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
+.what small { display: block; color: var(--text3); font-size: 12.5px; }
+.past { opacity: 0.45; }
+.birthday .what { font-weight: 500; }
+.gold { flex-shrink: 0; color: var(--gold); }
+.small { min-height: 30px; font-size: 13.5px; color: var(--text2); }
+.small .gold { margin: 0 24px 0 2px; }
+
+.sub {
+  display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-bottom: 4px;
+  font-size: 10.5px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.14em;
+}
+
+.mail { display: flex; align-items: center; gap: 4px; padding: 6px 0; }
+.mail + .mail { border-top: 1px solid var(--border); }
+.mailBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; color: inherit; text-decoration: none; }
+.who { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+.dot { width: 7px; height: 7px; border-radius: 99px; background: var(--gold); display: inline-block; }
+.line { font-size: 13.5px; color: var(--text2); line-height: 1.4; overflow-wrap: anywhere; }
+
+.add {
+  flex-shrink: 0; display: inline-grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 99px; background: var(--surface2); color: var(--text);
+}
+.add:disabled { background: var(--done-soft); color: var(--done); }
+
+.muted { font-size: 13px; color: var(--text3); line-height: 1.45; padding: 4px 0; }
+.problem { font-size: 12.5px; color: var(--warn); line-height: 1.45; margin-top: 6px; }
+
+/* The one-time setup */
+.lead { font-size: 13.5px; color: var(--text2); line-height: 1.45; margin-bottom: 4px; }
+.step { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border); }
+.stepHead { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600; }
+.ok { margin-left: auto; font-size: 12.5px; font-weight: 500; color: var(--done); overflow-wrap: anywhere; text-align: right; }
+.hint { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.hint b { font-weight: 600; color: var(--text); }
+.open {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border-radius: 99px; font-size: 13px; font-weight: 600;
+  color: var(--accent); border: 1px solid var(--border2); text-decoration: none;
+}
+.mailForm { display: flex; flex-direction: column; gap: 8px; }
+.paste { display: flex; gap: 8px; }
+.mailForm > input, .paste input {
+  flex: 1; min-width: 0; padding: 9px 12px; border-radius: var(--radius); font-size: 16px;
+  border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-family: inherit;
+}
+.mailForm > input:focus, .paste input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.paste button {
+  flex-shrink: 0; padding: 9px 16px; border-radius: 99px; font-size: 13.5px; font-weight: 600;
+  background: var(--accent); color: var(--on-accent); border: none;
+}
+.paste button:disabled { opacity: 0.55; }
+.remove { align-self: flex-start; font-size: 12.5px; font-weight: 600; color: var(--text3); background: none; border: none; padding: 0; }
