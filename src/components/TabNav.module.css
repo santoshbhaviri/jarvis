@@ -7,10 +7,10 @@
 .inner {
   max-width: 760px; margin: 0 auto;
   padding: 6px 10px 7px;
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px;
 }
 
-/* Six tabs fit a phone: icon over a short label */
+/* Seven tabs fit a phone: icon over a short label */
 .tab {
   position: relative; min-width: 0;
   display: flex; flex-direction: column; align-items: center; gap: 3px;

@@ -12,6 +12,7 @@ import DoneTab       from './components/DoneTab'
 import SearchTab     from './components/SearchTab'
 import AssistTab     from './components/AssistTab'
 import EvolveTab     from './components/EvolveTab'
+import RefundTab     from './components/RefundTab'
 import { isReady, listUpdates, knowledgeStatus } from './lib/server'
 import { moveAll } from './lib/knowledge'
 import { HOME, isTestCopy } from './lib/constants'
@@ -97,7 +98,7 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
       <Header isDark={isDark} onToggleTheme={onToggleTheme} reminders={reminders} onSignOut={onSignOut} />
       <TabNav active={activeTab} onChange={setActiveTab} badges={{ evolve: waiting + unseen }} />
 
-      <main className={styles.main}>
+      <main className={`${styles.main} ${activeTab === 'refund' ? styles.wide : ''}`}>
         {activeTab === 'today' && <InstallBanner />}
         {taskData.offline && (
           <p className={styles.offline}>Offline{taskData.pending ? ` · ${taskData.pending} change${taskData.pending > 1 ? 's' : ''} will sync` : ''}</p>
@@ -109,6 +110,7 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
         {activeTab === 'tracker' && <TrackerTab taskData={taskData} onEdit={setEditing} />}
         {activeTab === 'search'  && <SearchTab />}
         {activeTab === 'assist'  && <AssistTab  taskData={taskData} />}
+        {activeTab === 'refund'  && <RefundTab />}
         {activeTab === 'evolve'  && <EvolveTab  data={updates} ready={ghReady} onChanged={loadUpdates} seen={shown} />}
         {activeTab === 'done'    && <DoneTab    taskData={taskData} />}
       </main>
