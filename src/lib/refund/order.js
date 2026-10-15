@@ -4,10 +4,17 @@
 // previews. What all orders share is in order-kit.js; each category's paragraphs are in order-tN.js.
 import { OFFICE } from './order-kit.js'
 import { buildT1 } from './order-t1.js'
+import { buildT2 } from './order-t2.js'
+import { buildT3 } from './order-t3.js'
+import { buildT4 } from './order-t4.js'
+import { buildT5 } from './order-t5.js'
+import { buildT6 } from './order-t6.js'
+import { buildT7 } from './order-t7.js'
+import { buildT8 } from './order-t8.js'
 
 export { OFFICE }
 
-const BUILDERS = { T1: buildT1 }
+const BUILDERS = { T1: buildT1, T2: buildT2, T3: buildT3, T4: buildT4, T5: buildT5, T6: buildT6, T7: buildT7, T8: buildT8 }
 
 export function buildOrder(c, r, office = OFFICE) {
   const build = BUILDERS[c.cat || 'T1']

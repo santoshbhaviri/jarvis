@@ -81,7 +81,7 @@ export const FIELDS = [
   { key: 'drawback',    label: 'Drawback claimed', group: 'supply', type: 'choice', options: ['none', 'customs portion only', 'including central tax'], read: 'Drawback claimed on the shipping bills: none, customs portion only, or including central tax', cats: ['T2'] },
   { key: 'export_duty', label: 'Goods subject to export duty', group: 'supply', type: 'choice', options: ['no', 'yes'], read: 'Whether the exported goods are subject to export duty', cats: ['T2'] },
   { key: 'goods_or_services', label: 'Goods or services', group: 'supply', type: 'choice', options: ['goods', 'services'], read: 'Whether the supplies to the SEZ are of goods or of services', cats: ['T4', 'T6'] },
-  { key: 'ue_doc',      label: 'Unjust enrichment document', group: 'supply', type: 'choice', options: ['declaration (up to ₹2 lakh)', 'CA / CMA certificate (above ₹2 lakh)', 'not filed'], read: 'Declaration under rule 89(2)(l) or certificate under rule 89(2)(m) filed', cats: ['T6', 'T8'] },
+  { key: 'ue_doc',      label: 'Unjust enrichment document', group: 'claim', type: 'choice', options: ['declaration (up to ₹2 lakh)', 'CA / CMA certificate (above ₹2 lakh)', 'not filed'], read: 'Declaration under rule 89(2)(l) or certificate under rule 89(2)(m) filed', cats: ['T6', 'T8'] },
   { key: 'cash_reason', label: 'Why the cash balance arose (as stated)', group: 'cash', type: 'text', read: 'The reason the applicant gives for the balance in the electronic cash ledger', cats: ['T7'] },
 
   // The application

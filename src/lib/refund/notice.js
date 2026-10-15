@@ -75,7 +75,8 @@ export function buildNotice(c, r0, office = OFFICE) {
     return null
   }
   const totalSplit = claimedHeads.length === 1 ? splitOf(proposed) : matches ? k.rejH : null
-  const headsOrBlanks = (o) => o ? headsText(o, shown) : shown.map(h => `${HEAD_LABEL[h]} ₹${blank()}`).join(', ')
+  const hs = (o) => headsText(o, shown, true) || headsText(o, shown)
+  const headsOrBlanks = (o) => o ? hs(o) : shown.map(h => `${HEAD_LABEL[h]} ₹${blank()}`).join(', ')
 
   // ── Letterhead, title and particulars ──
   B.push({ t: 'letterhead' })
@@ -107,7 +108,7 @@ export function buildNotice(c, r0, office = OFFICE) {
     if (v.risk === 'not low-risk') prov = ' Provisional refund was not sanctioned because the system did not categorise the claim as "low-risk".'
     else prov = ` Provisional refund was not sanctioned because ${blank('reason')}.`
   }
-  k.p(`1.1 You filed the above application for refund of ${rs(T.claimed)} (${headsText(k.claimedH, shown)}) under ${CLAIMED_UNDER[cat]} for ${period}. It was acknowledged in FORM GST RFD-02 on ${date(v.ack)}.${prov}`)
+  k.p(`1.1 You filed the above application for refund of ${rs(T.claimed)} (${hs(k.claimedH)}) under ${CLAIMED_UNDER[cat]} for ${period}. It was acknowledged in FORM GST RFD-02 on ${date(v.ack)}.${prov}`)
 
   // ── 2. Grounds ──
   k.h('2. Grounds on which part of the claim appears inadmissible')
@@ -139,7 +140,7 @@ export function buildNotice(c, r0, office = OFFICE) {
   }
   if (excess) {
     const pen = String(n.penalty || '').trim() ? ` and penalty under section ${sec ? sec.pen : blank('73(9) / 74(9) / 74A(5)')}` : ''
-    k.p(`${rejecting ? '4.1A You are also required to show cause' : '4.1 You are required to show cause, by a reply in FORM GST RFD-09 on the common portal within fifteen days of receipt of this notice,'} why refund of **${rs(T.excess)}** (${headsText(k.excessH, shown)}), being the amount by which the provisional refund sanctioned by RFD-04 dated ${date(v.rfd04_date)} exceeds the amount now found admissible, should not be recovered from you as refund erroneously made, under section 54 read with section ${recSec}, with interest under section 50${pen}.`)
+    k.p(`${rejecting ? '4.1A You are also required to show cause' : '4.1 You are required to show cause, by a reply in FORM GST RFD-09 on the common portal within fifteen days of receipt of this notice,'} why refund of **${rs(T.excess)}** (${hs(k.excessH)}), being the amount by which the provisional refund sanctioned by RFD-04 dated ${date(v.rfd04_date)} exceeds the amount now found admissible, should not be recovered from you as refund erroneously made, under section 54 read with section ${recSec}, with interest under section 50${pen}.`)
   }
   if (recovery) {
     const payPen = String(n.penalty || '').trim() ? ` and the penalty payable under section ${sec ? sec.pay : blank('73(8) / 74(8) / 74A(8) or 74A(9)')}` : ''

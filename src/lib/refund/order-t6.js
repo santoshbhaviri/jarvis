@@ -41,7 +41,7 @@ export function buildT6(c, r, office) {
   const code = goods ? 'HSN' : services ? 'SAC' : 'HSN / SAC'
   const units = [...new Set(list.map(x => String(x.unit || '').trim()).filter(Boolean))]
   const paid = list.length ? s.rowsTotal : num(v.tax_3b)
-  p(`1.1 ${name} (the applicant), registered under GSTIN ${or(v.gstin, 'GSTIN')}, supplied ${or(v.supply_desc, `description of ${what}`)} under ${code} ${or(v.supply_hsn, code)} to ${units.length ? `${units.length} SEZ unit(s) / developer(s)` : blank('number of SEZ units / developers')}, ${or(v.sez_name, 'name of the SEZ unit / developer and of the Zone')}, during ${period || blank('period')}, on payment of integrated tax of ${paid === null ? `₹${blank()}` : rs(paid)}${cessed && cessRows ? ` and compensation cess of ${rs(cessRows)}` : ''}, declared in GSTR-1 Table 6B and paid through GSTR-3B Table 3.1(b).`)
+  p(`1.1 ${name} (the applicant), registered under GSTIN ${or(v.gstin, 'GSTIN')}, supplied ${or(v.supply_desc, `description of ${what}`)} under ${code} ${or(v.supply_hsn, code)} to ${units.length ? `${units.length} SEZ unit(s) / developer(s)` : blank('number of SEZ units / developers')} (${or(v.sez_name, 'name of the SEZ unit / developer and of the Zone')}) during ${period || blank('period')}, on payment of integrated tax of ${paid === null ? `₹${blank()}` : rs(paid)}${cessed && cessRows ? ` and compensation cess of ${rs(cessRows)}` : ''}, declared in GSTR-1 Table 6B and paid through GSTR-3B Table 3.1(b).`)
   p(`1.2 The applicant filed FORM GST RFD-01 under ARN ${or(v.arn, 'ARN')} dated ${date(v.filed)} for refund of ${rs(T.claimed)} (${headsText(k.claimedH, ['igst', 'cess'])}) of the integrated tax so paid, with Statement 4 listing ${list.length || blank('number of')} invoice${list.length === 1 ? '' : 's'} endorsed by the specified officer of the SEZ, and ${ok('not_collected') ? 'the declaration under rule 89(2)(f)' : blank('the declaration under rule 89(2)(f): filed / not filed')}. The application was acknowledged in FORM GST RFD-02 on ${date(v.ack)}.`)
 
   // 2. Legal provisions
@@ -86,7 +86,7 @@ export function buildT6(c, r, office) {
   p('6.1 **Endorsement, authorised operations and tax paid.**')
   k.caption('Table 1: Invoices to the SEZ')
   const yn = (x) => x === 'yes' ? 'Yes' : x === 'no' ? 'No' : blank('Yes / No')
-  const remark = (x, row) => [...x.why.map(w => w[0].toUpperCase() + w.slice(1)), ...(String(row.remarks || '').trim() ? [row.remarks.trim()] : [])].join('; ') || 'Admissible'
+  const remark = (x, row) => [...x.why.map(w => row.authorised === 'no' && /authorised operations/.test(w) ? 'not for authorised operations (para 8)' : w).map(w => w[0].toUpperCase() + w.slice(1)), ...(String(row.remarks || '').trim() ? [row.remarks.trim()] : [])].join('; ') || 'Admissible'
   const cols = 10 + (cessed ? 1 : 0)
   k.table(['S. No.', 'Invoice No. and date', 'SEZ unit / developer (GSTIN)', 'Goods / services', 'Taxable value (₹)', 'IGST paid (₹)', ...(cessed ? ['Cess paid (₹)'] : []), 'Endorsement (bill of entry / SEZ Online request No. and date)', 'Within authorised operations?', 'Shown in GSTR-1 Table 6B?', 'Remarks'], [
     ...(list.length ? list.map((row, i) => {

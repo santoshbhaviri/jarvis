@@ -208,7 +208,7 @@ export function closing(k, extraCopies = []) {
   k.list([
     `The Commissioner of Central Tax, ${office.commrte} (by name to the Assistant Commissioner (Review – Refunds), Headquarters), for review under section 107(2).`,
     `The Assistant / Deputy Commissioner (Post-Audit), ${office.commrte}, for post-audit of refund orders.`,
-    `The Superintendent, ${or(c.order?.range, 'Range')} Range, ${office.division}, for information and for updating the refund register.`,
+    `The Superintendent, ${or(c.order?.range, 'name of the')} Range, ${office.division}, for information and for updating the refund register.`,
     ...extraCopies,
     'Guard file / Office copy.',
   ])

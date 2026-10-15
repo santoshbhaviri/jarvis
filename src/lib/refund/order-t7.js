@@ -63,7 +63,7 @@ export function buildT7(c, r, office) {
       remarks: (rw) => [rw.remarks?.trim(), rw.refundable === 'no' ? 'Not refundable: paras 6 and 8' : ''].filter(Boolean).join('; '),
     } })
   const out = sno(rw => rw.refundable === 'no')
-  p(`6.2 **Why the cash accumulated.** ${blank('finding on the reason given in para 1.1, with the evidence, e.g. the challan date and the GSTR-3B in which the liability was discharged through the credit ledger')}${out.length ? ` The ${out.length > 1 ? 'entries' : 'entry'} at S. No${out.length > 1 ? 's' : ''}. ${out.join(', ')} of Table 1 (${rs(amt(rw => rw.refundable === 'no'))}) ${out.length > 1 ? 'are' : 'is'} not found refundable, for the reasons in para 8.` : ''}`)
+  p(`6.2 **Why the cash accumulated.** ${blank('finding on the reason given in para 1.1, with the evidence, e.g. the challan date and the GSTR-3B in which the liability was discharged through the credit ledger')}.${out.length ? ` The ${out.length > 1 ? 'entries' : 'entry'} at S. No${out.length > 1 ? 's' : ''}. ${out.join(', ')} of Table 1 (${rs(amt(rw => rw.refundable === 'no'))}) ${out.length > 1 ? 'are' : 'is'} not found refundable, for the reasons in para 8.` : ''}`)
   p(`6.3 **No liability attached to the deposit.** ${confirmText('cash_source', 'It was verified that the balance does not represent:')}`)
   k.list([
     `(a) tax, interest or late fee for any period for which the return is yet to be filed, or that is shown as payable in the Electronic Liability Register (Part I or Part II) (checked on ${date(c.order?.dues)});`,

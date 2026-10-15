@@ -97,7 +97,7 @@ export function computation(k, m) {
   k.p('7.2 Computation:')
   if (!s) { k.table(['Step', 'Working', 'Amount (₹)'], [['(i)', `(A + B) × D ÷ C = ${blank('figures')}`, blank()]]); return }
   const [A, Bv] = [m.A || 0, m.B || 0]
-  const claimedZR = s.asClaimed !== null ? s.asClaimed * s.ato / s.net : null
+  const claimedZR = s.asClaimed !== null ? (k.c.cat === 'T3' ? 0 : num(v.zr_goods) || 0) + (num(v.zr_services) || 0) : null
   k.table(['Step', 'Working', 'Amount (₹)'], [
     ['(i)', `(A + B) × D ÷ C = (${inr(A)} + ${inr(Bv)}) × ${inr(s.net)} ÷ ${inr(s.ato)} (not rounded)`, exact(s.formula)],
     ['(ii)', 'Balance in the electronic credit ledger at the end of the period', s.end === null ? blank() : inr(s.end)],
