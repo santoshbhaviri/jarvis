@@ -1,18 +1,22 @@
-// Refund Desk: inverted-duty refunds (template T1), from the claim's documents to the order.
-//   1 Documents  Claude reads each document into the case's fields, noting the page
-//   2 Review     you check every figure against its source; the rule 89(5) arithmetic and the
-//                checks are plain code (src/lib/refund/compute.js) and update as you type
-//   3 Notice     only when part of the claim is to be rejected: the RFD-08 grounds and your findings
+// Refund Desk: the office's eight refund categories (templates T1 to T8), from the claim's
+// documents to the order.
+//   1 Documents  pick the category; Claude reads each document into the case's fields and tables,
+//                noting the page
+//   2 Review     you check every figure against its source; the arithmetic and the checks are
+//                plain code (src/lib/refund/compute.js) and update as you type
+//   3 Notice     only when part of the claim is to be rejected (or excess provisional refund
+//                recovered): the RFD-08 notice as a Word file (template N1), then your findings
 //   4 Order      the RFD-06 speaking order as a Word file on the letterhead, for you to sign
 // You decide every figure and every ground; nothing is filed anywhere. The case lives only in this
 // open window (not on the phone, not on the server) and is gone when Jarvis is closed.
 import { useState, useEffect, useMemo, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { FileUp, Calculator, Gavel, FileText, RotateCcw, Plus, Trash2, Download, Wand2, CircleAlert, TriangleAlert, Info, Check } from 'lucide-react'
-import { FIELDS, GROUPS, FIELD, HEAD_LABEL, HEADS, CONFIRMS, INPUT_COLS, OUTPUT_COLS, emptyCase } from '../lib/refund/fields'
+import { GROUPS, HEAD_LABEL, HEADS, CATS, PROV_CATS, R89_4, emptyCase, fieldsFor, tablesFor, confirmsFor } from '../lib/refund/fields'
 import { compute, inr, ddmmyyyy, monthName, num } from '../lib/refund/compute'
 import { mergeRead } from '../lib/refund/merge'
 import { buildOrder, blanks } from '../lib/refund/order'
+import { buildNotice, noticeReady } from '../lib/refund/notice'
 import { readPages, ACCEPT } from '../lib/library'
 import { refundReady, readRefundDoc, polishFinding } from '../lib/server'
 import styles from './RefundTab.module.css'
@@ -44,7 +48,7 @@ export default function RefundTab() {
       <div className={styles.head}>
         <div>
           <h2 className={styles.title}>Refund Desk</h2>
-          <p className={styles.sub}>Inverted duty structure · s.54(3)(ii), rule 89(5) · order on template T1</p>
+          <p className={styles.sub}>{CATS[c.cat].label} · {CATS[c.cat].law} · order on template {c.cat}</p>
         </div>
         <button className={`${styles.btn} ${styles.quiet}`} onClick={fresh}><RotateCcw size={14} />New case</button>
       </div>
@@ -67,6 +71,15 @@ export default function RefundTab() {
 }
 
 // ── 1. Documents ──
+// Changing the category keeps the figures the new category also uses (the applicant, the
+// application) and clears the rest, tables included
+function switchCat(c, cat) {
+  const keep = new Set(fieldsFor(cat).map(f => f.key))
+  const pick = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => keep.has(k)))
+  const e = emptyCase(cat)
+  return { ...e, v: { ...e.v, ...pick(c.v) }, src: pick(c.src), alt: pick(c.alt), edited: pick(c.edited), notice: c.notice, order: { ...e.order, ...c.order } }
+}
+
 function Documents({ c, docs, setState, next }) {
   const input = useRef(null)
   const [busy, setBusy] = useState(false)
@@ -82,11 +95,11 @@ function Documents({ c, docs, setState, next }) {
       try {
         const { pages, skipped } = await readPages(file, (msg) => setDoc(file.name, { status: msg }))
         setDoc(file.name, { status: 'Claude is reading it…' })
-        const res = await readRefundDoc(file.name, pages)
+        const res = await readRefundDoc(file.name, pages, c.cat)
         if (res.error) throw new Error(res.why || "Claude couldn't read it. Try again.")
         setState(s => ({ ...s, c: mergeRead(s.c, res, file.name).c }))
         setDoc(file.name, {
-          status: 'done', kind: res.kind, found: (res.fields || []).length,
+          status: 'done', kind: res.kind, found: (res.fields || []).length, rows: Object.values(res.rows || {}).reduce((a, x) => a + (x?.length || 0), 0),
           note: [res.cut && 'only the first part was read: add the rest as a separate file', skipped && `${skipped} scanned pages were left out`].filter(Boolean).join('; '),
         })
       } catch (e) {
@@ -102,7 +115,17 @@ function Documents({ c, docs, setState, next }) {
         <TriangleAlert size={16} />
         <p>Until the department confirms that refund documents may be sent to Claude, use <b>redacted</b> copies (GSTIN and name blanked). Documents are read and forgotten: nothing is stored on the server or the phone.</p>
       </div>
-      <p className={styles.note}>Add the claim's documents: RFD-01 with Statement 1 and Annexure-B, GSTR-1, GSTR-3B and GSTR-2B of the period, the credit ledger, RFD-02 and RFD-04. PDFs (scanned pages too), photos or text.</p>
+      <label className={styles.field}>
+        <span className={styles.label}>Refund category (as in RFD-01)</span>
+        <select value={c.cat} disabled={busy} onChange={e => {
+          const cat = e.target.value
+          if (Object.keys(c.src).length && !confirm(`Change to ${CATS[cat].label}? Figures this category does not use are cleared; the applicant's details are kept.`)) return
+          setState(s => ({ ...s, c: switchCat(s.c, cat) }))
+        }}>
+          {Object.entries(CATS).map(([k, x]) => <option key={k} value={k}>{k}: {x.label}</option>)}
+        </select>
+      </label>
+      <p className={styles.note}>Add the claim's documents: {CATS[c.cat].docs}. PDFs (scanned pages too), photos or text.</p>
       {ready === false && <p className={styles.error}>Claude isn't connected. Open Evolve, tap Check setup and add your Claude key. You can still enter the figures by hand.</p>}
       <div className={styles.actions}>
         <button className={`${styles.btn} ${styles.primary}`} disabled={busy || ready === false} onClick={() => input.current?.click()}><FileUp size={14} />Add documents</button>
@@ -114,7 +137,7 @@ function Documents({ c, docs, setState, next }) {
           {docs.map(d => (
             <li key={d.name}>
               <span className={styles.docName}>{d.status === 'done' ? <Check size={14} className={styles.okIcon} /> : d.status === 'error' ? <CircleAlert size={14} className={styles.stopIcon} /> : <span className={styles.spin} />}{d.name}</span>
-              <small>{d.status === 'done' ? `${d.kind}: ${d.found} figures` : d.status === 'error' ? '' : d.status}{d.note ? ` · ${d.note}` : ''}</small>
+              <small>{d.status === 'done' ? `${d.kind}: ${d.found} figures${d.rows ? `, ${d.rows} table rows` : ''}` : d.status === 'error' ? '' : d.status}{d.note ? ` · ${d.note}` : ''}</small>
             </li>
           ))}
         </ul>
@@ -161,7 +184,7 @@ function Rows({ title, cols, rows, onChange }) {
   return (
     <div className={styles.rowsBox}>
       <div className={styles.rowsHead}><b>{title}</b><button className={styles.small} onClick={() => onChange([...rows, {}])}><Plus size={13} />Row</button></div>
-      {!rows.length && <p className={styles.note}>No rows yet. They come from Annexure-B or GSTR-1 when Claude finds rate-wise totals.</p>}
+      {!rows.length && <p className={styles.note}>No rows yet. They come from the documents when Claude finds them listed line by line, or add them here.</p>}
       {!!rows.length && (
         <div className={styles.scroll}>
           <table className={styles.grid}>
@@ -173,7 +196,9 @@ function Rows({ title, cols, rows, onChange }) {
                     <td key={col.key}>
                       {col.type === 'choice'
                         ? <select value={r[col.key] || ''} onChange={e => put(i, col.key, e.target.value)}><option value="">—</option>{col.options.map(o => <option key={o}>{o}</option>)}</select>
-                        : <input value={r[col.key] ?? ''} inputMode={col.type === 'text' ? undefined : 'decimal'} onChange={e => put(i, col.key, col.type === 'text' ? e.target.value : e.target.value.replace(/[^\d.]/g, ''))} />}
+                        : col.type === 'date'
+                          ? <input type="date" value={r[col.key] ?? ''} onChange={e => put(i, col.key, e.target.value)} />
+                          : <input value={r[col.key] ?? ''} inputMode={col.type === 'text' ? undefined : 'decimal'} onChange={e => put(i, col.key, col.type === 'text' ? e.target.value : e.target.value.replace(/[^\d.]/g, ''))} />}
                     </td>
                   ))}
                   <td><button className={styles.icon} aria-label="Delete row" onClick={() => onChange(rows.filter((_, j) => j !== i))}><Trash2 size={14} /></button></td>
@@ -199,31 +224,72 @@ function Flags({ r }) {
   )
 }
 
-function Working({ c, r }) {
+const W = ({ label, value, cls }) => <div className={`${styles.wRow} ${cls || ''}`}><span>{label}</span><b>{value}</b></div>
+const money = (x) => x === null || x === undefined ? '—' : inr(x)
+
+// The working of the formula, one line per step, for each kind of category
+function Steps({ c, r }) {
   const s = r.steps
-  if (!s) return <p className={styles.note}>The working appears here once A to E are filled in.</p>
+  if (c.cat === 'T1') return !s ? <p className={styles.note}>The working appears here once A to E are filled in.</p> : <>
+    <W label="(i) A × C ÷ B" value={inr(s.i, 2)} />
+    <W label="(ii) C ÷ D (not rounded)" value={s.ratio.toFixed(6)} />
+    <W label="(iii) E × C ÷ D" value={inr(s.iii, 2)} />
+    <W label="(iv) Maximum refund" value={inr(s.maxRefund)} />
+    <W label="(v) Ledger at end of period" value={money(s.end)} />
+    <W label="(vi) Ledger at filing" value={money(s.atFiling)} />
+  </>
+  if (R89_4.includes(c.cat)) return !s ? <p className={styles.note}>The working appears here once the zero-rated turnover, the Adjusted Total Turnover and Net ITC are in.</p> : <>
+    {c.cat === 'T3' || c.cat === 'T4' ? s.fromD !== null && <W label="Services: (a) + (b) − (c)" value={inr(s.fromD)} /> : null}
+    {!!s.excluded && <W label="Left out of the numerator (stays in the turnover)" value={inr(s.excluded)} />}
+    <W label="Zero-rated turnover adopted" value={inr(s.numerator)} />
+    <W label="Adjusted Total Turnover" value={inr(s.ato)} />
+    <W label="Net ITC" value={inr(s.net)} />
+    <W label="Formula (not rounded)" value={inr(s.formula, 2)} />
+    {s.asClaimed !== null && <W label="The formula on the turnover as claimed" value={inr(s.asClaimed, 2)} />}
+    <W label="Ledger at end of period" value={money(s.end)} />
+    <W label="Ledger at filing" value={money(s.atFiling)} />
+  </>
+  if (c.cat === 'T5' || c.cat === 'T6') return <>
+    <W label="Tax on the invoices in Table 1" value={inr(s.rowsTotal)} />
+    {r.left.map(x => <W key={x.i} label={`${x.label}: ${x.why.join('; ')}`} value={`− ${inr(x.amount)}`} cls={styles.red} />)}
+  </>
+  if (c.cat === 'T7') return <>
+    {HEADS.filter(h => r.heads[h].claimed || s.fromRows[h]).map(h => <W key={h} label={`${HEAD_LABEL[h]}: entries in Table 1 / cash balance`} value={`${inr(s.fromRows[h])} / ${money(s.cash[h])}`} />)}
+    {r.left.map(x => <W key={x.i} label={`${x.label}: not refundable`} value={`− ${inr(x.amount)}`} cls={styles.red} />)}
+  </>
+  if (c.cat === 'T8') return <>
+    <W label="(a) Pre-deposit + (b) other amounts" value={inr(HEADS.reduce((a, h) => a + r.heads[h].pd + r.heads[h].op, 0))} />
+    <W label="(c) Not refundable" value={inr(HEADS.reduce((a, h) => a + r.heads[h].nr, 0))} />
+    <W label="Of the refund: pre-deposit / other amounts" value={`${inr(r.total.pdRef)} / ${inr(r.total.opRef)}`} />
+    <W label="Paid in cash (RFD-05) / re-credit (PMT-03)" value={`${inr(r.total.cash)} / ${inr(r.total.credit)}`} />
+    <W label={`s.115 interest on the pre-deposit, ${s.days ?? '?'} days at ${s.rate}%`} value={`₹${inr(r.total.interest)}`} />
+  </>
+  return null
+}
+
+function Working({ c, r }) {
+  if (!r.heads) return <div className={styles.working}><Steps c={c} r={r} /></div>
   const v = c.v
+  const shown = HEADS.filter(h => h !== 'cess' || r.heads.cess.claimed)
+  const cols = [['claimed', 'Claimed'], ['admissible', 'Admissible'], ...(PROV_CATS.includes(c.cat) ? [['prov', 'Provisional']] : []),
+    ...(r.total.adj ? [['adj', 'Adjusted']] : []), ['net', c.cat === 'T8' ? 'Cash now' : 'Net now'], ...(c.cat === 'T8' ? [['credit', 'PMT-03'], ['interest', 's.115']] : []), ['rejected', 'Rejected']]
   return (
     <div className={styles.working}>
-      <div className={styles.wRow}><span>(i) A × C ÷ B</span><b>{inr(s.i, 2)}</b></div>
-      <div className={styles.wRow}><span>(ii) C ÷ D (not rounded)</span><b>{s.ratio.toFixed(6)}</b></div>
-      <div className={styles.wRow}><span>(iii) E × C ÷ D</span><b>{inr(s.iii, 2)}</b></div>
-      <div className={styles.wRow}><span>(iv) Maximum refund</span><b>{inr(s.maxRefund)}</b></div>
-      <div className={styles.wRow}><span>(v) Ledger at end of period</span><b>{s.end === null ? '—' : inr(s.end)}</b></div>
-      <div className={styles.wRow}><span>(vi) Ledger at filing</span><b>{s.atFiling === null ? '—' : inr(s.atFiling)}</b></div>
-      <div className={`${styles.wRow} ${styles.total}`}><span>Admissible</span><b>₹{inr(r.total.admissible)}</b></div>
-      <div className={styles.wRow}><span>Claimed</span><b>₹{inr(r.total.claimed)}</b></div>
+      <Steps c={c} r={r} />
+      <W label="Admissible" value={`₹${inr(r.total.admissible)}`} cls={styles.total} />
+      <W label="Claimed" value={`₹${inr(r.total.claimed)}`} />
       <div className={styles.wRow}><span>To be rejected</span><b className={r.total.rejected ? styles.red : ''}>₹{inr(r.total.rejected)}</b></div>
+      {!!r.total.excess && <div className={styles.wRow}><span>Provisional refund paid in excess</span><b className={styles.red}>₹{inr(r.total.excess)}</b></div>}
       <table className={styles.heads}>
-        <thead><tr><th /><th>Claimed</th><th>Admissible</th><th>Provisional</th><th>Net now</th><th>Rejected</th></tr></thead>
-        <tbody>{HEADS.filter(h => h !== 'cess' || r.heads.cess.claimed).map(h => (
-          <tr key={h}><th>{HEAD_LABEL[h]}</th>{['claimed', 'admissible', 'prov', 'net', 'rejected'].map(k => <td key={k}>{inr(r.heads[h][k])}</td>)}</tr>
+        <thead><tr><th />{cols.map(([k, l]) => <th key={k}>{l}</th>)}</tr></thead>
+        <tbody>{shown.map(h => (
+          <tr key={h}><th>{HEAD_LABEL[h]}</th>{cols.map(([k]) => <td key={k}>{inr(r.heads[h][k])}</td>)}</tr>
         ))}</tbody>
       </table>
       {!!r.limitation.length && (
-        <p className={styles.note}>Two years: {r.limitation.map(m => `${monthName(m.month)} until ${ddmmyyyy(m.ends)}${m.inTime === false ? ' (late)' : ''}`).join('; ')}.
-          {r.sixty && ` Sixty days end ${ddmmyyyy(r.sixty)}${r.daysLeft >= 0 ? ` (${r.daysLeft} days left)` : ''}.`}</p>
+        <p className={styles.note}>Two years: {r.limitation.slice(0, 6).map(m => `${m.label} until ${m.ends ? ddmmyyyy(m.ends) : '?'}${m.inTime === false ? ' (late)' : ''}`).join('; ')}{r.limitation.length > 6 ? `; and ${r.limitation.length - 6} more` : ''}.</p>
       )}
+      {r.sixty && <p className={styles.note}>Sixty days end {ddmmyyyy(r.sixty)}{r.daysLeft >= 0 ? ` (${r.daysLeft} days left)` : ''}.</p>}
       {v.from && <p className={styles.note}>Period: {monthName(v.from)}{v.to && v.to !== v.from ? ` to ${monthName(v.to)}` : ''}</p>}
     </div>
   )
@@ -231,25 +297,30 @@ function Working({ c, r }) {
 
 function Review({ c, r, set, next }) {
   const cessClaimed = num(c.v.claimed_cess) > 0
+  const fields = fieldsFor(c.cat)
+  const title = c.cat === 'T1' ? 'Rule 89(5) working' : R89_4.includes(c.cat) ? 'Rule 89(4) working' : 'Working'
   return (
     <div className={styles.split}>
       <div className={styles.left}>
-        {GROUPS.filter(g => g.key !== 'cess' || cessClaimed).map(g => (
+        {GROUPS.filter(g => (g.key !== 'cess' || cessClaimed) && fields.some(f => f.group === g.key)).map(g => (
           <section key={g.key} className={styles.panel}>
             <h3 className={styles.h3}>{g.label}</h3>
-            <div className={styles.fields}>{FIELDS.filter(f => f.group === g.key).map(f => <Field key={f.key} f={f} c={c} set={set} />)}</div>
+            <div className={styles.fields}>{fields.filter(f => f.group === g.key).map(f => <Field key={f.key} f={f} c={c} set={set} />)}</div>
           </section>
         ))}
-        <section className={styles.panel}>
-          <h3 className={styles.h3}>Rate-wise tables (Tables 1 and 2 of the order)</h3>
-          <Rows title="Table 1: inputs" cols={INPUT_COLS} rows={c.inputs} onChange={rows => set(cc => ({ ...cc, inputs: rows }))} />
-          <Rows title="Table 2: outward supplies" cols={OUTPUT_COLS} rows={c.outputs} onChange={rows => set(cc => ({ ...cc, outputs: rows }))} />
-        </section>
+        {!!tablesFor(c.cat).length && (
+          <section className={styles.panel}>
+            <h3 className={styles.h3}>Tables of the order</h3>
+            {tablesFor(c.cat).map(t => (
+              <Rows key={t.key} title={t.label} cols={t.cols} rows={c.rows[t.key] || []} onChange={rows => set(cc => ({ ...cc, rows: { ...cc.rows, [t.key]: rows } }))} />
+            ))}
+          </section>
+        )}
         <section className={styles.panel}>
           <h3 className={styles.h3}>Your checks</h3>
           <p className={styles.note}>Tick what you have verified. Anything not ticked stays as a yellow blank in the order.</p>
           <ul className={styles.confirms}>
-            {CONFIRMS.map(x => (
+            {confirmsFor(c.cat).map(x => (
               <li key={x.key}><label>
                 <input type="checkbox" checked={!!c.confirm[x.key]} onChange={e => set(cc => ({ ...cc, confirm: { ...cc.confirm, [x.key]: e.target.checked } }))} />
                 <span>{x.text} <small>({x.law})</small></span>
@@ -260,7 +331,7 @@ function Review({ c, r, set, next }) {
       </div>
       <aside className={styles.right}>
         <section className={`${styles.panel} ${styles.sticky}`}>
-          <h3 className={styles.h3}>Rule 89(5) working</h3>
+          <h3 className={styles.h3}>{title}</h3>
           <Working c={c} r={r} />
           <h3 className={styles.h3}>Checks</h3>
           <Flags r={r} />
@@ -271,20 +342,60 @@ function Review({ c, r, set, next }) {
   )
 }
 
+// Grounds to start the notice from: the rows the checks left out (where each row is an amount
+// of the refund), or the gap between what was claimed and what the working allows. The officer
+// edits every word before the notice goes.
+function suggestGrounds(c, r) {
+  const out = []
+  if (['T5', 'T6', 'T7'].includes(c.cat)) {
+    for (const x of r.left) out.push({ title: x.label, text: `${x.label}: ${x.why.join('; ')}. ${blank('the facts found and the provision relied on')}`, amount: x.amount })
+  }
+  const covered = out.reduce((a, g) => a + (g.amount || 0), 0)
+  if (r.total.rejected - covered > 1) {
+    const law = c.cat === 'T1' ? 'rule 89(5)' : R89_4.includes(c.cat) ? 'rule 89(4)' : 'section 54'
+    const why = R89_4.includes(c.cat) && r.left.length ? ` The following were left out of the zero-rated turnover: ${r.left.map(x => `${x.label} (₹${inr(x.amount)}: ${x.why.join('; ')})`).join('; ')}.` : ''
+    out.push({ title: 'Refund claimed exceeds the amount admissible', text: `The refund admissible under ${law} works out to ₹${inr(r.total.admissible)} against ₹${inr(r.total.claimed)} claimed.${why} ${blank('the working and the provision relied on')}`, amount: r.total.rejected - covered })
+  }
+  if (r.total.excess > 0) out.push({ title: 'Provisional refund paid in excess', text: `The provisional refund of ₹${inr(r.total.prov)} paid by RFD-05 exceeds the amount admissible, ₹${inr(r.total.admissible)}, by ₹${inr(r.total.excess)}, which is proposed for recovery with interest under section 50.`, amount: 0 })
+  return out
+}
+const blank = (what) => `⟦${what}⟧`
+
+async function saveWord(blocks, name, title) {
+  const { orderToWord } = await import('../lib/refund/word')
+  const blob = await orderToWord(blocks, undefined, { title })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `${name.replace(/[^\w .-]/g, '')}.docx`
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000)
+}
+
 // ── 3. Notice ──
 function Notice({ c, r, set, next }) {
   const n = c.notice
   const putN = (k, x) => set(cc => ({ ...cc, notice: { ...cc.notice, [k]: x } }))
   const putG = (i, k, x) => set(cc => ({ ...cc, grounds: cc.grounds.map((g, j) => j === i ? { ...g, [k]: x } : g) }))
   const [busy, setBusy] = useState(-1)
-  const facts = `Inverted duty refund for ${monthName(c.v.from)}${c.v.to && c.v.to !== c.v.from ? ` to ${monthName(c.v.to)}` : ''}; outputs ${c.v.outward || ''} at ${c.v.output_rate ?? '?'}%, inputs ${c.v.inputs || ''} at ${c.v.input_rate ?? '?'}%; claimed ₹${inr(r.total?.claimed)}, admissible ₹${inr(r.total?.admissible)}.`
+  const [making, setMaking] = useState(false)
+  const [preview, setPreview] = useState(false)
+  const period = c.v.from ? `${monthName(c.v.from)}${c.v.to && c.v.to !== c.v.from ? ` to ${monthName(c.v.to)}` : ''}` : ''
+  const facts = `${CATS[c.cat].label} refund${period ? ` for ${period}` : ''}; claimed ₹${inr(r.total?.claimed)}, admissible on the working ₹${inr(r.total?.admissible)}.`
   const polish = async (i) => {
     const g = c.grounds[i]
     setBusy(i)
-    const res = await polishFinding({ facts, ground: g.text, reply: g.reply, verified: g.verified, finding: `${{ rejected: 'Not accepted', accepted: 'Accepted', partly: 'Partly accepted' }[g.outcome] || ''}. ${g.finding}` })
+    const res = await polishFinding({ facts, ground: `${g.title ? `${g.title}. ` : ''}${g.text}`, reply: g.reply, verified: g.verified, finding: `${{ rejected: 'Not accepted', accepted: 'Accepted', partly: 'Partly accepted' }[g.outcome] || ''}. ${g.finding}` })
     setBusy(-1)
     if (res.error) return toast.error(res.why || "Claude couldn't write it. Try again.")
     putG(i, 'para', res.para)
+  }
+  const missing = r.rejecting ? noticeReady(c, r) : []
+  const blocks = useMemo(() => r.rejecting && preview ? buildNotice(c, r) : null, [c, r, preview])
+  const download = async () => {
+    setMaking(true)
+    try { await saveWord(buildNotice(c, r), `RFD-08 ${c.v.arn || CATS[c.cat].short}`, 'Notice (RFD-08)') }
+    catch { toast.error("Couldn't make the Word file. Try again.") }
+    setMaking(false)
   }
 
   if (!r.rejecting) return (
@@ -293,24 +404,43 @@ function Notice({ c, r, set, next }) {
       <button className={`${styles.btn} ${styles.primary}`} onClick={next}>Next: the order</button>
     </section>
   )
+  const field = (k, label, type = 'text', extra = {}) => <label className={styles.field}><span className={styles.label}>{label}</span><input type={type} value={n[k] || ''} onChange={e => putN(k, e.target.value)} {...extra} /></label>
   return (
     <div className={styles.stack}>
       <section className={styles.panel}>
-        <div className={styles.warn}><Gavel size={16} /><p>₹{inr(r.total.rejected)} would be rejected. Rule 92(3) allows that only on grounds put to the applicant in an RFD-08 notice, after a reply and a hearing. If the notice has not gone yet, issue it first (template N1; the Refund Desk will draft it in the next stage) and come back.</p></div>
+        <div className={styles.warn}><Gavel size={16} /><p>{r.total.rejected ? `₹${inr(r.total.rejected)} would be rejected` : ''}{r.total.rejected && r.total.excess ? ' and ' : ''}{r.total.excess ? `₹${inr(r.total.excess)} of provisional refund recovered` : ''}. Rule 92(3) allows that only on grounds put to the applicant in an RFD-08 notice, after a reply and a hearing. Write the grounds below and download the notice. When the reply and hearing are over, come back and record your finding on each ground.</p></div>
+        <h3 className={styles.h3}>The notice</h3>
         <div className={styles.fields}>
-          <label className={styles.field}><span className={styles.label}>RFD-08 No.</span><input value={n.no} onChange={e => putN('no', e.target.value)} /></label>
-          <label className={styles.field}><span className={styles.label}>RFD-08 date</span><input type="date" value={n.date} onChange={e => putN('date', e.target.value)} /></label>
-          <label className={styles.field}><span className={styles.label}>Reply (RFD-09) date, if any</span><input type="date" value={n.reply} onChange={e => putN('reply', e.target.value)} /></label>
-          <label className={styles.field}><span className={styles.label}>Personal hearing date</span><input type="date" value={n.hearing} onChange={e => putN('hearing', e.target.value)} /></label>
-          <label className={styles.field}><span className={styles.label}>Attended by (designation, not name)</span><input value={n.attended} placeholder="the authorised representative" onChange={e => putN('attended', e.target.value)} /></label>
+          {field('no', 'RFD-08 No.')}
+          {field('date', 'RFD-08 date', 'date')}
+          {field('rfn', 'RFN from the portal')}
+          {field('hearing', 'Personal hearing date', 'date')}
+          {field('time', 'Hearing time', 'text', { placeholder: '11:00 AM' })}
+          {!!r.total.excess && field('drc01', 'DRC-01 summary (No. and date)')}
+          {!!r.total.excess && (
+            <label className={styles.field}><span className={styles.label}>Recovery under section</span>
+              <select value={n.recovery_sec || ''} onChange={e => putN('recovery_sec', e.target.value)}><option value="">—</option><option>73</option><option>74</option><option>74A</option></select>
+            </label>
+          )}
         </div>
+        <label className={styles.field}><span className={styles.label}>Documents relied on in the notice</span><textarea rows={2} value={n.relied || ''} onChange={e => putN('relied', e.target.value)} /></label>
+        {!c.grounds.length && (
+          <div className={styles.actions}>
+            <button className={styles.btn} onClick={() => set(cc => ({ ...cc, grounds: suggestGrounds(cc, r) }))}><Wand2 size={14} />Start from the checks</button>
+            <button className={styles.btn} onClick={() => set(cc => ({ ...cc, grounds: [{}] }))}><Plus size={14} />Write a ground</button>
+          </div>
+        )}
       </section>
       {c.grounds.map((g, i) => (
         <section key={i} className={styles.panel}>
           <div className={styles.rowsHead}><h3 className={styles.h3}>Ground {i + 1}</h3><button className={styles.icon} aria-label="Delete ground" onClick={() => set(cc => ({ ...cc, grounds: cc.grounds.filter((_, j) => j !== i) }))}><Trash2 size={15} /></button></div>
+          <label className={styles.field}><span className={styles.label}>Title</span><input value={g.title || ''} onChange={e => putG(i, 'title', e.target.value)} /></label>
           <label className={styles.field}><span className={styles.label}>Ground as stated in the notice, with figures and the provision</span><textarea rows={3} value={g.text || ''} onChange={e => putG(i, 'text', e.target.value)} /></label>
           <div className={styles.fields}>
             <label className={styles.field}><span className={styles.label}>Amount proposed for rejection (₹)</span><input inputMode="decimal" value={g.amount ?? ''} onChange={e => putG(i, 'amount', e.target.value.replace(/[^\d.]/g, ''))} /></label>
+          </div>
+          <h3 className={styles.h3}>After the reply and the hearing</h3>
+          <div className={styles.fields}>
             <label className={styles.field}><span className={styles.label}>Your decision</span>
               <select value={g.outcome || ''} onChange={e => putG(i, 'outcome', e.target.value)}><option value="">—</option><option value="rejected">Not accepted (reject)</option><option value="partly">Partly accepted</option><option value="accepted">Accepted (drop the ground)</option></select>
             </label>
@@ -327,11 +457,23 @@ function Notice({ c, r, set, next }) {
           )}
         </section>
       ))}
+      <section className={styles.panel}>
+        <h3 className={styles.h3}>Reply and hearing</h3>
+        <div className={styles.fields}>
+          {field('reply', 'Reply (RFD-09) date, if any', 'date')}
+          {field('attended', 'Attended by (designation, not name)', 'text', { placeholder: 'the authorised representative' })}
+          {field('docs', 'Documents filed with the reply')}
+        </div>
+      </section>
       <div className={styles.actions}>
-        <button className={styles.btn} onClick={() => set(cc => ({ ...cc, grounds: [...cc.grounds, {}] }))}><Plus size={14} />Add a ground</button>
+        {!!c.grounds.length && <button className={styles.btn} onClick={() => set(cc => ({ ...cc, grounds: [...cc.grounds, {}] }))}><Plus size={14} />Add a ground</button>}
+        <button className={styles.btn} disabled={making || missing.length > 0} onClick={download}><Download size={14} />{making ? 'Making…' : 'Download the RFD-08 notice'}</button>
+        <button className={styles.btn} disabled={missing.length > 0} onClick={() => setPreview(x => !x)}><FileText size={14} />{preview ? 'Hide the notice' : 'Show the notice'}</button>
         <button className={`${styles.btn} ${styles.primary}`} onClick={next}>Next: the order</button>
       </div>
-      <Flags r={{ flags: r.flags.filter(f => f.law === 'rule 92(3)') }} />
+      {!!missing.length && <p className={styles.note}>Before the notice can be made: {missing.join('; ')}.</p>}
+      {blocks && <section className={styles.panel}><Preview blocks={blocks} /></section>}
+      <Flags r={{ flags: r.flags.filter(f => f.law === 'rule 92(3)' || /DRC-01/.test(f.text)) }} />
     </div>
   )
 }
@@ -344,20 +486,12 @@ function Order({ c, r, set }) {
   const blocks = useMemo(() => r.ready ? buildOrder(c, r) : null, [c, r])
   const todo = blocks ? blanks(blocks) : []
   const stops = r.flags.filter(f => f.level === 'stop')
+  const shown = HEADS.filter(h => r.heads?.[h]?.admissible > 0)
 
   const download = async () => {
     setMaking(true)
-    try {
-      const { orderToWord } = await import('../lib/refund/word')
-      const blob = await orderToWord(blocks)
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `RFD-06 ${(c.v.arn || 'inverted duty').replace(/[^\w -]/g, '')}.docx`
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000)
-    } catch {
-      toast.error("Couldn't make the Word file. Try again.")
-    }
+    try { await saveWord(blocks, `RFD-06 ${c.v.arn || CATS[c.cat].short}`, 'Refund order (RFD-06)') }
+    catch { toast.error("Couldn't make the Word file. Try again.") }
     setMaking(false)
   }
 
@@ -371,6 +505,15 @@ function Order({ c, r, set }) {
           <label className={styles.field}><span className={styles.label}>Range</span><input value={o.range} onChange={e => putO('range', e.target.value)} /></label>
           <label className={styles.field}><span className={styles.label}>Dues under s.54(10) checked on</span><input type="date" value={o.dues} onChange={e => putO('dues', e.target.value)} /></label>
         </div>
+        {!!shown.length && <>
+          <h3 className={styles.h3}>Adjusted against confirmed dues (s.54(10)(b)), if any</h3>
+          <div className={styles.fields}>
+            <label className={styles.field}><span className={styles.label}>Demand ID or order</span><input value={o.adj_ref || ''} onChange={e => putO('adj_ref', e.target.value)} /></label>
+            {shown.map(h => (
+              <label key={h} className={styles.field}><span className={styles.label}>{HEAD_LABEL[h]} adjusted (₹)</span><input inputMode="decimal" value={o[`adj_${h}`] ?? ''} onChange={e => putO(`adj_${h}`, e.target.value.replace(/[^\d.]/g, ''))} /></label>
+            ))}
+          </div>
+        </>}
       </section>
       {!r.ready && (
         <section className={styles.panel}>

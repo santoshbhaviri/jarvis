@@ -2,7 +2,7 @@
 // a figure fills it, with its source ("GSTR-3B July 2026 p.2"); a different figure for the same
 // field from another document is kept beside it as "also found", for the officer to choose.
 // Never overwrites what the officer typed.
-import { FIELD } from './fields.js'
+import { FIELD, TABLES } from './fields.js'
 import { num } from './compute.js'
 
 const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 }
@@ -40,11 +40,15 @@ export function parseValue(f, raw) {
 }
 
 const same = (a, b) => typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) < 1 : String(a) === String(b)
-const rowNums = (row, keys) => Object.fromEntries(Object.entries(row).map(([k, x]) => [k, keys.includes(k) ? num(x) : (x ?? '')]))
+// One row of a table, each cell parsed by its column's type (amounts as numbers, dates ISO)
+const parseRow = (row, cols) => Object.fromEntries(cols.map(col => {
+  const x = parseValue(col, row[col.key])
+  return [col.key, x ?? '']
+}))
 
-// c: the case; read: { kind, fields, inputs, outputs } from the server; doc: the file's name
+// c: the case; read: { kind, fields, rows: { tableKey: [...] } } from the server; doc: the file's name
 export function mergeRead(c, read, doc) {
-  const next = { ...c, v: { ...c.v }, src: { ...c.src }, alt: { ...(c.alt || {}) } }
+  const next = { ...c, v: { ...c.v }, src: { ...c.src }, alt: { ...(c.alt || {}) }, rows: { ...(c.rows || {}) } }
   const kind = (read.kind || doc || 'document').trim()
   let added = 0
   for (const x of read.fields || []) {
@@ -60,7 +64,13 @@ export function mergeRead(c, read, doc) {
       next.alt[x.key] = [...(next.alt[x.key] || []), { value, src }]
     }
   }
-  if (!next.inputs?.length && read.inputs?.length) next.inputs = read.inputs.map(r => rowNums(r, ['rate', 'value', 'itc']))
-  if (!next.outputs?.length && read.outputs?.length) next.outputs = read.outputs.map(r => rowNums(r, ['rate', 'value', 'tax']))
+  // A table is filled from the first document that lists its lines; later documents do not add to it
+  for (const [key, list] of Object.entries(read.rows || {})) {
+    const t = TABLES[key]
+    if (!t || !t.cats.includes(c.cat || 'T1') || next.rows[key]?.length || !list?.length) continue
+    next.rows[key] = list.map(r => parseRow(r, t.cols))
+    next.src[`rows.${key}`] = kind
+    added += list.length
+  }
   return { c: next, added, kind }
 }

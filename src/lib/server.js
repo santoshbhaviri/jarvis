@@ -68,5 +68,5 @@ export const unlinkDay    = (what) => call('jarvis-day', { method: 'POST', body:
 // Refund Desk: Claude reads one document of a refund claim into the case's fields, and writes up
 // the officer's finding on one ground. Claude only, and nothing is kept on the server.
 export const refundReady   = () => call('jarvis-refund', { query: '?ping' })
-export const readRefundDoc = (name, pages) => call('jarvis-refund', { method: 'POST', body: { action: 'extract', name, pages } })
+export const readRefundDoc = (name, pages, cat) => call('jarvis-refund', { method: 'POST', body: { action: 'extract', cat, name, pages } })
 export const polishFinding = (body) => call('jarvis-refund', { method: 'POST', body: { action: 'polish', ...body } })

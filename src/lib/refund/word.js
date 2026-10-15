@@ -6,7 +6,7 @@ import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, Footer, PageNumber,
   AlignmentType, BorderStyle, ShadingType, WidthType, TableLayoutType,
 } from 'docx'
-import { OFFICE } from './order.js'
+import { OFFICE } from './order-kit.js'
 
 const NAVY = '1F3864', GREY = '595959', SAFFRON = 'FF9933', GREEN = '138808'
 const FONT = 'Times New Roman', HINDI = 'Nirmala UI'
@@ -117,7 +117,8 @@ function table(head, rows) {
   })
 }
 
-export async function orderToWord(blocks, office = OFFICE) {
+// opts.title: the Word file's document title (a notice passes { title: 'Notice (RFD-08)' })
+export async function orderToWord(blocks, office = OFFICE, opts = {}) {
   const children = []
   for (const b of blocks) {
     if (b.t === 'letterhead') children.push(...letterhead(office))
@@ -132,7 +133,7 @@ export async function orderToWord(blocks, office = OFFICE) {
   }
   const doc = new Document({
     creator: 'Jarvis Refund Desk',
-    title: 'Refund order (RFD-06)',
+    title: opts?.title || 'Refund order (RFD-06)',
     styles: { default: { document: { run: { font: FONT, size: pt(12) } } } },
     sections: [{
       properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } },
@@ -151,7 +152,7 @@ export async function orderToWord(blocks, office = OFFICE) {
 }
 
 // For tests and the command line: the same file as bytes
-export async function orderToBuffer(blocks, office = OFFICE) {
-  const blob = await orderToWord(blocks, office)
+export async function orderToBuffer(blocks, office = OFFICE, opts = {}) {
+  const blob = await orderToWord(blocks, office, opts)
   return Buffer.from(await blob.arrayBuffer())
 }

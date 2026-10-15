@@ -131,3 +131,22 @@ test('a document read fills empty fields and keeps a different figure aside', as
   assert.equal(c.src.B, 'Statement 1 p.2')
   assert.deepEqual(c.alt.B, [{ value: 310000, src: 'GSTR-3B p.1' }])
 })
+
+test('a document read fills a category table once, parsing each column', async () => {
+  const { mergeRead } = await import('./merge.js')
+  let c = emptyCase('T2')
+  c = mergeRead(c, { kind: 'Statement 3', fields: [], rows: { exports: [{ inv: 'E/1', inv_value: '10,00,000', sb: 'SB 1', port: 'INMAA1', egm: '10/07/2026', fob: '980000.00', remarks: null }] } }, 'a.pdf').c
+  c = mergeRead(c, { kind: 'ICEGATE', fields: [], rows: { exports: [{ inv: 'X', inv_value: '1', sb: 'X', port: 'X', egm: null, fob: '1', remarks: null }] } }, 'b.pdf').c
+  assert.equal(c.rows.exports.length, 1)
+  assert.equal(c.rows.exports[0].inv_value, 1000000)
+  assert.equal(c.rows.exports[0].egm, '2026-07-10')
+  assert.equal(c.rows.exports[0].remarks, '')
+})
+
+test('the reading prompt and schema follow the category', async () => {
+  const { readPrompt, schemaFor } = await import('../../../netlify/functions/jarvis-refund.mjs')
+  assert.match(readPrompt('T2'), /shipping bills/)
+  assert.ok(schemaFor('T2').properties.rows.properties.exports)
+  assert.equal(schemaFor('T8').properties.rows, undefined)
+  assert.ok(schemaFor('T8').properties.fields.items.properties.key.enum.includes('pd_cgst'))
+})
