@@ -101,6 +101,7 @@ Android: open the Netlify URL in Chrome and tap **Install** on the card. iPhone:
 - Supabase → Authentication → Sign In / Providers → turn off **Allow new users to sign up**, once your own account exists.
 - Turn on two-step login for GitHub and Netlify.
 - Already built in: each account sees only its own tasks; only `JARVIS_OWNER_EMAIL` can use the server functions; security headers in `netlify.toml` stop other sites embedding or injecting into Jarvis; the copy of tasks on the phone is cleared on sign-out.
+- Already built in: Jarvis keeps your free Supabase awake by itself every day (a tiny daily check), so it no longer pauses when you haven't opened Jarvis for a week.
 
 ## Switch on the extras (optional, free, one time)
 All keys go in one place: Netlify → your site → **Site configuration → Environment variables → Add a variable**. They stay on the server, never on the phone. Mark `GEMINI_API_KEY` and `GITHUB_TOKEN` as **Contains secret values** (not `VITE_SUPABASE_ANON_KEY`, which is meant to be in the app). Redeploy once afterwards (Deploys → Trigger deploy), then open **Evolve → Check setup** in Jarvis: it tests each key from the server and says in plain words what to fix.
