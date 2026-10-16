@@ -1,11 +1,10 @@
-import { Sun, Target, Search, MessageCircle, Sparkles, CircleCheck, Briefcase, House, ReceiptIndianRupee } from 'lucide-react'
+import { Sun, Target, MessageCircle, Sparkles, CircleCheck, Briefcase, House, ReceiptIndianRupee } from 'lucide-react'
 
 export const TABS = [
   { key: 'today',   label: 'Today',   icon: Sun },
   { key: 'tracker', label: 'Tracker', icon: Target },
-  { key: 'search',  label: 'Search',  icon: Search },
-  { key: 'assist',  label: 'Assist',  icon: MessageCircle },
   { key: 'refund',  label: 'Refunds', icon: ReceiptIndianRupee },
+  { key: 'assist',  label: 'Assist',  icon: MessageCircle },
   { key: 'evolve',  label: 'Evolve',  icon: Sparkles },
   { key: 'done',    label: 'Done',    icon: CircleCheck },
 ]

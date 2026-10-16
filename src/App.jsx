@@ -9,7 +9,6 @@ import TabNav        from './components/TabNav'
 import TodayTab      from './components/TodayTab'
 import TrackerTab    from './components/TrackerTab'
 import DoneTab       from './components/DoneTab'
-import SearchTab     from './components/SearchTab'
 import AssistTab     from './components/AssistTab'
 import EvolveTab     from './components/EvolveTab'
 import RefundTab     from './components/RefundTab'
@@ -108,7 +107,6 @@ function Workspace({ isDark, onToggleTheme, onSignOut }) {
 
         {activeTab === 'today'   && <TodayTab   taskData={taskData} onEdit={setEditing} />}
         {activeTab === 'tracker' && <TrackerTab taskData={taskData} onEdit={setEditing} />}
-        {activeTab === 'search'  && <SearchTab />}
         {activeTab === 'assist'  && <AssistTab  taskData={taskData} />}
         {activeTab === 'refund'  && <RefundTab />}
         {activeTab === 'evolve'  && <EvolveTab  data={updates} ready={ghReady} onChanged={loadUpdates} seen={shown} />}
