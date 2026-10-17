@@ -4,7 +4,8 @@
 //   POST { action: 'extract', cat, name, pages: [{ p, t }] }
 //        → Claude reads one document's text into the fields and tables of fields.js for that
 //          refund category (T1 to T8), each figure with its page
-//          → { kind, fields: [{ key, value, page, quote }], rows: { tableKey: [...] } }
+//          → { kind, fields: [{ key, value, page, quote }], rows: { tableKey: [...] }, grounds, notice }
+//          (grounds and notice only when the document is an earlier notice or order on the claim)
 //   POST { action: 'polish', facts, ground, reply, verified, finding }
 //        → the officer's own finding on one ground, written up as an order paragraph → { para }
 // Claude only reads and writes. The arithmetic and the checks are plain code in
@@ -46,7 +47,11 @@ ${tables.length ? `
 Where the document lists them line by line, also fill these tables in rows, one row per line of the document, in the same formats (amounts as digits, dates as YYYY-MM-DD; a column the document does not give is null):
 ${tables.map(t => `- ${t.key} (${t.label}): ${t.cols.map(describe).join('; ')}`).join('\n')}
 Copy rows; do not merge or total them. Leave a table empty if the document does not list its lines.` : ''}
-kind: what this document is, in a few words (for example "RFD-01 Statement 3", "GSTR-3B July 2026").`
+kind: what this document is, in a few words (for example "RFD-01 Statement 3", "GSTR-3B July 2026", "RFD-06 order").
+
+The document may also be an earlier show cause notice (RFD-08), deficiency memo (RFD-03), refund order (RFD-06) or scrutiny note on this claim. Then also copy:
+- grounds: each ground or reason for rejecting part of the claim, as stated, one per ground: title (a few words), text (the ground as written, shortened only if very long), amount (rupees proposed or ordered to be rejected on that ground, digits only, or null if not stated). Empty for any other document;
+- notice: the RFD-08 notice number and date (YYYY-MM-DD) if this document is that notice or refers to it, else null.`
 }
 
 const orNull = (t) => ({ anyOf: [{ type: t }, { type: 'null' }] })
@@ -57,9 +62,20 @@ const row = (cols) => ({
 export function schemaFor(cat) {
   const tables = tablesFor(cat)
   return {
-    type: 'object', additionalProperties: false, required: ['kind', 'fields', ...(tables.length ? ['rows'] : [])],
+    type: 'object', additionalProperties: false, required: ['kind', 'fields', 'grounds', 'notice', ...(tables.length ? ['rows'] : [])],
     properties: {
       kind: { type: 'string' },
+      grounds: {
+        type: 'array',
+        items: {
+          type: 'object', additionalProperties: false, required: ['title', 'text', 'amount'],
+          properties: { title: { type: 'string' }, text: { type: 'string' }, amount: orNull('string') },
+        },
+      },
+      notice: { anyOf: [{ type: 'null' }, {
+        type: 'object', additionalProperties: false, required: ['no', 'date'],
+        properties: { no: orNull('string'), date: orNull('string') },
+      }] },
       fields: {
         type: 'array',
         items: {
