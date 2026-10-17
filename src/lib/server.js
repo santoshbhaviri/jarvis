@@ -34,8 +34,6 @@ export const dropUpdate   = (number) => call('jarvis-github', { method: 'POST', 
 
 // Search tab: headlines and Wikipedia (free, no key), then a short answer from Claude (or Gemini).
 // turns carries the conversation for a follow-up question.
-export const searchWeb    = (q) => call('jarvis-search', { query: `?q=${encodeURIComponent(q)}` })
-export const searchAnswer = (q, found, turns) => call('jarvis-search', { method: 'POST', body: { q, news: found.news, wiki: found.wiki, turns } })
 
 // Knowledge: notes, preferences, saved answers and what Jarvis learned, used by Search and Assist
 export const listMemory   = () => call('jarvis-memory')
@@ -64,3 +62,9 @@ export const getDay       = (fresh) => call('jarvis-day', { query: fresh ? '?fre
 export const linkCalendar = (link) => call('jarvis-day', { method: 'POST', body: { action: 'calendar', link } })
 export const linkMail     = (address, password) => call('jarvis-day', { method: 'POST', body: { action: 'mail', address, password } })
 export const unlinkDay    = (what) => call('jarvis-day', { method: 'POST', body: { action: 'remove', what } })
+
+// Refund Desk: Claude reads one document of a refund claim into the case's fields, and writes up
+// the officer's finding on one ground. Claude only, and nothing is kept on the server.
+export const refundReady   = () => call('jarvis-refund', { query: '?ping' })
+export const readRefundDoc = (name, pages, cat) => call('jarvis-refund', { method: 'POST', body: { action: 'extract', cat, name, pages } })
+export const polishFinding = (body) => call('jarvis-refund', { method: 'POST', body: { action: 'polish', ...body } })

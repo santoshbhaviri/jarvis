@@ -97,9 +97,9 @@ async function pdfPages(file, progress) {
   return { pages: pages.sort((a, b) => a.p - b.p), skipped: scanned.length - reading.length }
 }
 
-// Reads a file and saves it to the Library → { doc, skipped } (skipped: scanned pages not read)
-export async function addToLibrary(file, progress = () => {}) {
-  const name = (file.name || 'Document').replace(/\.[a-z0-9]+$/i, '') || 'Document'
+// The text of a PDF, photo or text file, page by page → { pages: [{ p, t }], skipped }
+// (skipped: scanned pages not read). Also used by the Refund Desk, which keeps nothing.
+export async function readPages(file, progress = () => {}) {
   let pages, skipped = 0
   if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
     ({ pages, skipped } = await pdfPages(file, progress))
@@ -115,6 +115,13 @@ export async function addToLibrary(file, progress = () => {}) {
   }
   pages = pages.filter(pg => pg.t.trim())
   if (!pages.length) throw new Error('Jarvis found no text in this document.')
+  return { pages, skipped }
+}
+
+// Reads a file and saves it to the Library → { doc, skipped } (skipped: scanned pages not read)
+export async function addToLibrary(file, progress = () => {}) {
+  const name = (file.name || 'Document').replace(/\.[a-z0-9]+$/i, '') || 'Document'
+  const { pages, skipped } = await readPages(file, progress)
 
   progress('Saving to your Library…')
   const started = await startDoc(name)
