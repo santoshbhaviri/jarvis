@@ -72,5 +72,18 @@ export function mergeRead(c, read, doc) {
     next.src[`rows.${key}`] = kind
     added += list.length
   }
+  // An earlier notice or order on the claim: its grounds start the case's grounds (only when there
+  // are none yet), and its notice number and date fill the notice where blank
+  const grounds = (read.grounds || []).filter(g => String(g?.text || '').trim())
+  if (grounds.length && !(next.grounds || []).length) {
+    next.grounds = grounds.map(g => ({ title: String(g.title || '').trim(), text: String(g.text).trim(), amount: num(g.amount) ?? '', from: kind }))
+    added += grounds.length
+  }
+  if (read.notice) {
+    const n = { ...(next.notice || {}) }
+    if (!n.no && read.notice.no) n.no = String(read.notice.no).trim()
+    if (!n.date && read.notice.date) n.date = parseDate(read.notice.date)
+    next.notice = n
+  }
   return { c: next, added, kind }
 }
